@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json.schemastore.org/tsconfig",
+
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDirs": ["src/"],
+
+    "noEmit": false,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "sourceMap": true,
+    "declarationMap": true,
+    "inlineSources": true,
+    "experimentalDecorators": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "types": ["node", "heft-jest"],
+
+    "module": "commonjs",
+    "target": "ESNext",
+    "lib": ["ESNext"],
+
+    "paths": {
+      "~/*" : ["./src/*"]
+    },
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}
