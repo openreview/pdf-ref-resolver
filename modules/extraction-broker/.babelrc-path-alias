@@ -1,0 +1,12 @@
+{
+  "presets":[
+  ],
+  "plugins": [
+    [ "module-resolver", {
+      "cwd": "dist",
+      "alias": {
+        "^~/(.*)$": "./\\1"
+      }
+    }],
+  ]
+}

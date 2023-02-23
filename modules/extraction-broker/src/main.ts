@@ -1,22 +1,10 @@
 import {
-  registerCmd,
-  config,
-  opt,
-  YArgs
-} from '~/cli/arglib'
-
-registerCmd(
   YArgs,
-  'corpus-server',
-  'server filesystem artifacts from corpus',
-  config(
-    opt.cwd,
-    opt.existingDir('corpus-root: root directory for corpus files'),
-  ),
-)((args: any) => {
-  const { corpusRoot } = args;
+} from '~/cli/arglib';
 
-});
+import * as grobidIo from './app/grobid-io';
+
+grobidIo.registerCommands(YArgs);
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 YArgs

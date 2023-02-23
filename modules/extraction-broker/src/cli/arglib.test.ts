@@ -1,9 +1,7 @@
-import 'chai';
-
 import _ from 'lodash';
 import yargs from 'yargs';
 import {
-  config, opt, ArgvApp, registerCmd, YArgs,
+  config, opt, ArgvApp, registerCmd,
 } from './arglib';
 
 describe('Arglib tests', () => {

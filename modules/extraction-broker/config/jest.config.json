@@ -1,6 +1,9 @@
 {
   "extends": "@rushstack/heft-jest-plugin/includes/jest-shared.config.json",
-  "collectCoverage": true,
+  "collectCoverage": false,
+  "moduleNameMapper": {
+    "~/(.*)": "<rootDir>/src/$1",
+  },
   "coverageThreshold": {
     "global": {
       "branches": 50,

@@ -1,0 +1,36 @@
+#!/bin/bash
+
+grobid_zip="0.7.2.zip"
+grobid_root="grobid-0.7.2"
+grobid_install="grobid-installation"
+
+if [[ ! -f "$grobid_zip" ]]; then
+    echo 'Fetching Grobid'
+    wget "https://github.com/kermitt2/grobid/archive/$grobid_zip"
+else
+    echo 'Grobid already fetched'
+fi
+
+if [[ ! -d "$grobid_root" ]]; then
+    echo "unzipping Grobid"
+    unzip "$grobid_zip"
+else
+    echo 'Grobid already unzipped'
+fi
+
+if [[ -d "$grobid_install" ]]; then
+    echo "$grobid_install already exists. exiting..."
+    exit 0
+fi
+
+cd "$grobid_root" || die "No Grobid root dir"
+
+./gradlew clean assemble
+cd ..
+mkdir grobid-installation
+cd grobid-installation
+unzip ../grobid-0.7.2/grobid-service/build/distributions/grobid-service-0.7.2.zip
+mv grobid-service-0.7.2 grobid-service
+unzip ../grobid-0.7.2/grobid-home/build/distributions/grobid-home-0.7.2.zip
+
+echo "run service with ./grobid-service/bin/grobid-service"

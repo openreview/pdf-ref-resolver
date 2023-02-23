@@ -33,7 +33,7 @@ export function resolveCorpusUrl(entryId: string, ...artifactPaths: string[]): s
 
 export function resolveCorpusPath(entryId: string, ...artifactPaths: string[]): string {
   const leaves = _.join([entryId, ...artifactPaths], '/');
-  console.log('leaves', leaves)
+  console.log('leaves', leaves);
   return _.join(['/api/corpus/entry', leaves], '/');
 }
 
