@@ -1,77 +1,118 @@
 import _ from 'lodash';
 import * as io from 'io-ts';
+import * as E from 'fp-ts/Either'
+import { pipe } from 'fp-ts/function';
+import { PathReporter } from 'io-ts/lib/PathReporter';
 
-const attrTypes = io.partial({
-  level: io.string,
+/**
+ * n.b., io.union is order dependent
+ **/
+// export const Attributes = io.union([
+//   io.strict({ type: io.string, level: io.string }),
+//   io.strict({ type: io.string }),
+//   io.strict({ unit: io.string }),
+//   io.strict({ 'xml:id': io.string }),
+// ], 'Attributes');
+export const Attributes = io.partial({
+  unit: io.string,
   type: io.string,
-  'xml:id': io.string,
-  'unit': io.string,
-});
+  level: io.string,
+  when: io.string,
+  page: io.string,
+  from: io.string,
+  to: io.string,
+  'xml:id': io.string
+}, 'Attributes');
+
+export type Attributes = io.TypeOf<typeof Attributes>;
 
 export const Elem = io.partial({
-  _attributes: attrTypes,
+  _attributes: Attributes,
   _text: io.string
 }, 'Elem');
 
+export type Elem = io.TypeOf<typeof Elem>;
+
 export const PersName = io.type({
-  forename: Elem,
-  surname: Elem,
+  persName: io.strict({
+    forename: io.union([io.array(Elem), Elem]),
+    surname: Elem,
+  })
 }, 'PersName');
 
+export type PersName = io.TypeOf<typeof PersName>;
 
-// export const Title = io.alias(Elem, '');
+export const Analytic = io.type({
+  title: Elem,
+  author: io.union([
+    PersName,
+    io.array(PersName),
+  ])
+}, 'Analytic');
 
-// export const GlyphRef = io.union([
-//   io.Int,
-//   io.string,
-// ], 'GlyphRef');
+export type Analytic = io.TypeOf<typeof Analytic>;
 
-// export const Line = io.strict({
-//   text: io.string,
-//   glyphs: io.array(GlyphRef),
-// }, 'Line');
+const DateAttr = io.strict({
+  type: io.string,
+  when: io.string
+});
 
-// export type Line = io.TypeOf<typeof Line>;
+export type DateAttr = io.TypeOf<typeof DateAttr>;
 
-// {
-//     _attributes: { 'xml:id': 'b0' },
-//     analytic: {
-//       title: {
-//         _attributes: { level: 'a', type: 'main' },
-//         _text: 'Improved algorithms for linear stochastic bandits'
-//       },
-//       author: [
-//         {
-//           persName: {
-//             forename: { _attributes: { type: 'first' }, _text: 'Y' },
-//             surname: { _text: 'Abbasi-Yadkori' }
-//           }
-//         },
-//         {
-//           persName: {
-//             forename: { _attributes: { type: 'first' }, _text: 'D' },
-//             surname: { _text: 'Pál' }
-//           }
-//         },
-//         {
-//           persName: {
-//             forename: { _attributes: { type: 'first' }, _text: 'C' },
-//             surname: { _text: 'Szepesvári' }
-//           }
-//         }
-//       ]
-//     },
-//     monogr: {
-//       title: {
-//         _attributes: { level: 'j' },
-//         _text: 'Advances in neural information processing systems'
-//       },
-//       imprint: {
-//         biblScope: { _attributes: { unit: 'volume' }, _text: '24' },
-//         date: {
-//           _attributes: { type: 'published', when: '2011' },
-//           _text: '2011'
-//         }
-//       }
-//     }
-//   },
+const DateElem = io.strict({
+  _attributes: DateAttr,
+  _text: io.string
+});
+
+export type DateElem = io.TypeOf<typeof DateElem>;
+
+export const Imprint = io.partial({
+  biblScope: io.union([io.array(Elem), Elem]),
+  date: DateElem
+}, 'Imprint');
+
+export type Imprint = io.TypeOf<typeof Imprint>;
+
+export const Monogr = io.type({
+  title: Elem,
+  imprint: Imprint,
+}, 'Monogr');
+
+export type Monogr = io.TypeOf<typeof Monogr>;
+
+export const Reference = io.partial({
+  _attributes: Attributes,
+  analytic: Analytic,
+  note: Elem,
+  idno: Elem,
+  monogr: Monogr
+}, 'Reference');
+
+export type Reference = io.TypeOf<typeof Reference>;
+
+
+export const References = io.array(Reference);
+export type References = io.TypeOf<typeof References>;
+
+
+export function decodeGrobidReference(input: any): E.Either<string[], Reference> {
+  return pipe(
+    E.right(input),
+    E.chain(x => Reference.decode(x)),
+    E.mapLeft(err => {
+      const report = PathReporter.report(E.left(err));
+      return report;
+    })
+  );
+}
+
+export function decodeGrobidReferences(input: any): E.Either<string[], References> {
+  return pipe(
+    E.right(input),
+    E.chain(x => References.decode(x)),
+    E.mapLeft(err => {
+      const report = PathReporter.report(E.left(err));
+      return report;
+    })
+  );
+}

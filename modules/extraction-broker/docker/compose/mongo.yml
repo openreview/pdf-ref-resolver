@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:5
+    container_name: mongo
+    networks:
+      - service-net
+    environment:
+      LOG_STDOUT: "true"
+      LOG_JSON: "false"
+    ports:
+      - "27017:27017"
+    volumes:
+      - logs:/var/log
+      - mongo-data:/data/db

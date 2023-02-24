@@ -75,3 +75,4 @@ common/autoinstallers/*/.npmrc
 temp/
 
 *.d/
+config-*.json

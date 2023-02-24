@@ -3,8 +3,11 @@ import {
 } from '~/cli/arglib';
 
 import * as grobidIo from './app/grobid-io';
+import * as mongoIo from './app/mongodb';
+
 
 grobidIo.registerCommands(YArgs);
+mongoIo.registerCommands(YArgs);
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 YArgs
