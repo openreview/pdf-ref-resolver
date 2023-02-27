@@ -33,7 +33,7 @@ export const PersName = io.type({
 
 export type PersName = io.TypeOf<typeof PersName>;
 
-export const Analytic = io.type({
+export const Analytic = io.partial({
   title: io.union([io.array(Elem), Elem]),
   author: io.union([
     PersName,
