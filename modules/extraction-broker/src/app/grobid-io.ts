@@ -83,14 +83,14 @@ async function extractRefs(pdfFile: string): Promise<string> {
     const output = {
       errors
     };
-    return JSON.stringify(output)
+    return JSON.stringify(output, null, 4)
   }
 
   const refs = maybeRefs.right;
   const output = {
     references: refs
   };
-  return JSON.stringify(output);
+  return JSON.stringify(output, null, 4);
 }
 
 export function registerCommands(args: YArgsT) {
