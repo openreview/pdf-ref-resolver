@@ -4,15 +4,6 @@ import * as E from 'fp-ts/Either'
 import { pipe } from 'fp-ts/function';
 import { PathReporter } from 'io-ts/lib/PathReporter';
 
-/**
- * n.b., io.union is order dependent
- **/
-// export const Attributes = io.union([
-//   io.strict({ type: io.string, level: io.string }),
-//   io.strict({ type: io.string }),
-//   io.strict({ unit: io.string }),
-//   io.strict({ 'xml:id': io.string }),
-// ], 'Attributes');
 export const Attributes = io.partial({
   unit: io.string,
   type: io.string,

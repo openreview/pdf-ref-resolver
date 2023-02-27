@@ -5,9 +5,13 @@ import { prettyPrint } from '~/util/pretty-print';
 import * as G from './grobid-schemas';
 
 export const AttributesSchema = new Schema<G.Attributes>({
+  'unit': { type: String, required: false },
   'type': { type: String, required: false },
   'level': { type: String, required: false },
-  'unit': { type: String, required: false },
+  'when': { type: String, required: false },
+  'page': { type: String, required: false },
+  'from': { type: String, required: false },
+  'to': { type: String, required: false },
   'xml:id': { type: String, required: false },
 });
 

@@ -21,7 +21,6 @@ import convert from 'xml-js'
 import { decodeGrobidReference, decodeGrobidReferences, Reference } from './grobid-schemas';
 import { insertPdfReferences } from './mongo-schemas';
 
-
 export function grobidReq(): AxiosInstance {
   const config: AxiosRequestConfig = {
     baseURL: 'http://localhost:8070/',
@@ -73,7 +72,7 @@ async function extractPdf(pdfFile: string) {
 
   const refs = maybeRefs.right;
   prettyPrint({ refs })
-  // await insertPdfReferences(pdfFile, refs);
+  await insertPdfReferences(pdfFile, refs);
 }
 
 export function registerCommands(args: YArgsT) {
