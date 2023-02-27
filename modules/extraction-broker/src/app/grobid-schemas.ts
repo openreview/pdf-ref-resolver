@@ -64,9 +64,9 @@ export const Imprint = io.partial({
 
 export type Imprint = io.TypeOf<typeof Imprint>;
 
-export const Monogr = io.type({
+export const Monogr = io.partial({
   title: io.union([io.array(Elem), Elem]),
-  editor: io.union([io.array(Elem), Elem]),
+  // editor: io.union([io.array(Elem), Elem]),
   imprint: Imprint,
 }, 'Monogr');
 
