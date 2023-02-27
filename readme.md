@@ -4,7 +4,11 @@ Extract references from PDF bibliographies and find the corresponding papers in 
 # Installation
 ## Build and install Grobid Server
 ## (Optional) Install Biblio-Glutton
-
+## Prerequisites
+    - unzip
+    - mongodb
+    - java
+    - node
 
 # System Components
 

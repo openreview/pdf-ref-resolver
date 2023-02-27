@@ -46,7 +46,6 @@ async function grobidProcessReferences(pdfFile: string): Promise<E.Either<string
       const jsonData = JSON.parse(jsonText)
       const back = jsonData.TEI.text.back;
       const bibliography: any[] = back.div.listBibl.biblStruct
-      // const ref0 = bibliography[1];
 
       bibliography.forEach(reference => {
         const decoded = decodeGrobidReference(reference);
@@ -55,8 +54,10 @@ async function grobidProcessReferences(pdfFile: string): Promise<E.Either<string
           prettyPrint({ msg: 'Error', reference, error });
         }
       });
-      return E.left(['TODO']);
-      // return decodeGrobidReferences(bibliography);
+
+      const refs = decodeGrobidReferences(bibliography);
+
+      return refs;
     });
 }
 
@@ -73,6 +74,20 @@ async function extractPdf(pdfFile: string) {
   const refs = maybeRefs.right;
   prettyPrint({ refs })
   await insertPdfReferences(pdfFile, refs);
+}
+
+async function extractRefs(pdfFile: string) {
+  putStrLn(`Extracting ${pdfFile}`);
+  const maybeRefs = await grobidProcessReferences(pdfFile);
+  if (E.isLeft(maybeRefs)) {
+    putStrLn('Error extracting references');
+    const msg = maybeRefs.left.join('\n');
+    putStrLn(msg);
+    return;
+  }
+
+  const refs = maybeRefs.right;
+  prettyPrint({ refs })
 }
 
 export function registerCommands(args: YArgsT) {
@@ -92,5 +107,25 @@ export function registerCommands(args: YArgsT) {
         console.log('success');
       });
 
+  });
+  registerCmd(
+    args,
+    'show-pdf-refs',
+    'Extract PDF referencesusing Grobid service, printing the result',
+    config(
+      opt.cwd,
+      opt.file('pdf'),
+    ),
+  )(async (args: any) => {
+    const { pdf } = args;
+
+    await extractRefs(pdf)
+      .then(() => {
+        console.log('success');
+      })
+      .catch((error: Error) => {
+        console.log(`Error: ${error.message}`);
+      })
+    ;
   });
 }

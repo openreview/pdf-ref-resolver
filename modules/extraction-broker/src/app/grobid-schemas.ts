@@ -25,9 +25,9 @@ export const Elem = io.partial({
 export type Elem = io.TypeOf<typeof Elem>;
 
 export const PersName = io.type({
-  persName: io.strict({
+  persName: io.partial({
     forename: io.union([io.array(Elem), Elem]),
-    surname: Elem,
+    surname: io.union([io.array(Elem), Elem]),
   })
 }, 'PersName');
 
