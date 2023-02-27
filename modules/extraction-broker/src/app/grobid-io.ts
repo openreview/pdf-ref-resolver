@@ -76,18 +76,21 @@ async function extractPdf(pdfFile: string) {
   await insertPdfReferences(pdfFile, refs);
 }
 
-async function extractRefs(pdfFile: string) {
-  putStrLn(`Extracting ${pdfFile}`);
+async function extractRefs(pdfFile: string): Promise<string> {
   const maybeRefs = await grobidProcessReferences(pdfFile);
   if (E.isLeft(maybeRefs)) {
-    putStrLn('Error extracting references');
-    const msg = maybeRefs.left.join('\n');
-    putStrLn(msg);
-    return;
+    const errors = maybeRefs.left;
+    const output = {
+      errors
+    };
+    return JSON.stringify(output)
   }
 
   const refs = maybeRefs.right;
-  prettyPrint({ refs })
+  const output = {
+    references: refs
+  };
+  return JSON.stringify(output);
 }
 
 export function registerCommands(args: YArgsT) {
@@ -111,17 +114,18 @@ export function registerCommands(args: YArgsT) {
   registerCmd(
     args,
     'show-pdf-refs',
-    'Extract PDF referencesusing Grobid service, printing the result',
+    'Extract PDF references using Grobid service, printing the result',
     config(
       opt.cwd,
       opt.file('pdf'),
+      opt.str('out'),
     ),
   )(async (args: any) => {
-    const { pdf } = args;
+    const { pdf, out } = args;
 
     await extractRefs(pdf)
-      .then(() => {
-        console.log('success');
+      .then((jsonData: string) => {
+        fs.writeFileSync(out, jsonData);
       })
       .catch((error: Error) => {
         console.log(`Error: ${error.message}`);
