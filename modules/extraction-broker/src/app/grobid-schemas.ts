@@ -34,7 +34,7 @@ export const PersName = io.type({
 export type PersName = io.TypeOf<typeof PersName>;
 
 export const Analytic = io.type({
-  title: Elem,
+  title: io.union([io.array(Elem), Elem]),
   author: io.union([
     PersName,
     io.array(PersName),
@@ -65,7 +65,8 @@ export const Imprint = io.partial({
 export type Imprint = io.TypeOf<typeof Imprint>;
 
 export const Monogr = io.type({
-  title: Elem,
+  title: io.union([io.array(Elem), Elem]),
+  editor: io.union([io.array(Elem), Elem]),
   imprint: Imprint,
 }, 'Monogr');
 
