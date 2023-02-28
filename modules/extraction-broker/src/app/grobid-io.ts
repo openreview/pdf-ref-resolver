@@ -99,6 +99,7 @@ export function registerCommands(args: YArgsT) {
     'extract-pdf',
     'Extract PDF using Grobid service',
     config(
+      opt.env,
       opt.cwd,
       opt.file('pdf'),
     ),

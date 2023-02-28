@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 import { Mongoose } from 'mongoose';
 import { initConfig, isTestingEnv } from './config';
-import { putStrLn } from '~/util/pretty-print';
+import { prettyPrint, putStrLn } from '~/util/pretty-print';
 import {
   registerCmd,
   config,
@@ -56,6 +56,7 @@ export function registerCommands(yargv: YArgsT) {
     yargv,
     'mongo',
     'Create/Delete/Update Mongo Database',
+    opt.env,
     opt.flag('clean'),
   )(async (args: any) => {
     const clean: boolean = args.clean;

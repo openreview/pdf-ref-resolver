@@ -16,6 +16,7 @@ export function registerCommands(args: YArgsT) {
     'xml-to-json',
     'Convert Grobid XML data to JSON',
     config(
+      opt.env,
       opt.cwd,
       opt.file('xml'),
     ),

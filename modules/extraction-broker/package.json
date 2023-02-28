@@ -12,9 +12,10 @@
     "heft:build:watch": "heft build --watch",
     "heft:test": "heft test --lite",
     "heft:test:watch": "heft test --watch",
-    "tsup:build": "tsup src/main.ts --dts --format cjs,esm --sourcemap",
-    "tsup:build:watch": "npm run tsup:build -- --watch",
+    "tsup:build": "tsup",
+    "tsup:build:watch": "tsup --watch",
     "build": "run-p heft:build tsup:build",
+    "bundle": "NODE_ENV=prod tsup --clean",
     "watch": "run-p heft:build:watch tsup:build:watch",
     "rebuild": "run-s clean build"
   },

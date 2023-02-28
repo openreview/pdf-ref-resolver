@@ -1,3 +1,5 @@
+#!/bin/env node
+
 import {
   YArgs,
 } from '~/cli/arglib';
@@ -5,8 +7,6 @@ import {
 import * as grobidIo from './app/grobid-io';
 import * as mongoIo from './app/mongodb';
 import * as grobidData from './app/grobid-data';
-
-
 
 grobidIo.registerCommands(YArgs);
 mongoIo.registerCommands(YArgs);

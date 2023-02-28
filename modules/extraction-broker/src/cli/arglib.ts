@@ -5,7 +5,7 @@ import fs from 'fs-extra';
 import path from 'path';
 
 import yargs, { Argv, Arguments, Options, MiddlewareFunction } from 'yargs';
-import { putStrLn } from '../util/pretty-print';
+import { putStrLn, prettyPrint} from '../util/pretty-print';
 
 export const YArgs = yargs;
 
@@ -76,12 +76,31 @@ const optString = (odesc: string, def?: string) =>  optAndDesc(odesc, {
   default: def
 });
 
-// const optlogLevel = (def?: string) => optAndDesc('log-level: set logging level', {
-//   type: 'string',
-//   choices: AllLogLevels,
-//   demandOption: def === undefined,
-//   default: def
-// });
+const optEnv0 = optAndDesc('env:Specify NODE_ENV', {
+  type: 'string',
+  choices: ['dev', 'prod'],
+  default: 'dev'
+});
+
+const optEnv = (ya: Argv) => {
+  ya.option('env', {
+    describe: 'Specify NODE_ENV',
+    type: 'string',
+    choices: ['dev', 'prod'],
+    default:'dev'
+  });
+
+  const middleFunc: MiddlewareFunction = (argv: Arguments) => {
+    const argvEnv = typeof argv.env === 'string'? argv.env : 'dev'
+    const env = process.env.NODE_ENV;
+    process.env.NODE_ENV = env || argvEnv;
+  };
+
+  ya.middleware(middleFunc, /* applyBeforeValidation= */ true);
+
+  return ya;
+};
+
 
 const existingPath = (pathAndDesc: string) => (ya: Argv) => {
   let [pathname, desc] = pathAndDesc.includes(':')
@@ -209,6 +228,7 @@ export const opt = {
   cwd: setCwd,
   ion: optAndDesc,
   flag: optFlag,
+  env: optEnv,
   num: optNum,
   str: optString,
   // logLevel: optlogLevel,

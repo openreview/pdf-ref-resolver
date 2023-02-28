@@ -1,7 +1,0 @@
-#!/bin/bash
-
-pdf_file=${1:? "Please specify PDF file"}
-
-if [[ ! -f "$pdf_file" ]]; then
-    die "Not a PDF file"
-fi
