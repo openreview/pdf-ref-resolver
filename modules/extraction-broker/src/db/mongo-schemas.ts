@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { Schema, model } from 'mongoose';
 import { prettyPrint } from '~/util/pretty-print';
 
-import * as G from './grobid-schemas';
+import * as G from '~/grobid/grobid-schemas';
 
 export const AttributesSchema = new Schema<G.Attributes>({
   'unit': { type: String, required: false },

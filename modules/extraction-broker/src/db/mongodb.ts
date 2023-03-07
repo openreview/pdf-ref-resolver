@@ -1,13 +1,13 @@
 import mongoose from 'mongoose';
 import { Mongoose } from 'mongoose';
-import { initConfig, isTestingEnv } from './config';
-import { prettyPrint, putStrLn } from '~/util/pretty-print';
+import { initConfig, isTestingEnv } from '~/util/config';
+import { putStrLn } from '~/util/pretty-print';
 import {
   registerCmd,
-  config,
   opt,
   YArgsT
-} from '~/cli/arglib';
+} from '~/util/arglib';
+
 import { createCollections } from './mongo-schemas';
 
 

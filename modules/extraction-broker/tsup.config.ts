@@ -12,6 +12,11 @@ const defaultOpts: Options = {
   entryPoints: ['src/main.ts'],
   target: 'es2020',
   outDir: 'dist',
+  outExtension({}) {
+    return {
+      js: `.bundle.js`,
+    }
+  },
 };
 
 export default defineConfig((options) => {

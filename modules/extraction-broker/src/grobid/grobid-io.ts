@@ -3,7 +3,7 @@ import {
   config,
   opt,
   YArgsT
-} from '~/cli/arglib';
+} from '~/util/arglib';
 
 import _ from 'lodash';
 import * as E from 'fp-ts/Either'
@@ -19,7 +19,7 @@ import fs from 'fs';
 
 import convert from 'xml-js'
 import { decodeGrobidReference, decodeGrobidReferences, Reference } from './grobid-schemas';
-import { insertPdfReferences } from './mongo-schemas';
+import { insertPdfReferences } from '~/db/mongo-schemas';
 
 export function grobidReq(): AxiosInstance {
   const config: AxiosRequestConfig = {
@@ -33,7 +33,7 @@ export function grobidReq(): AxiosInstance {
   return axios.create(config);
 }
 
-async function grobidProcessReferences(pdfFile: string): Promise<E.Either<string[], Reference[]>> {
+async function grobidProcessReferencesToXML(pdfFile: string): Promise<E.Either<string[], string>> {
   const data = new FormData()
   data.append('input', fs.createReadStream(pdfFile))
 
@@ -41,8 +41,22 @@ async function grobidProcessReferences(pdfFile: string): Promise<E.Either<string
     .post('/api/processReferences', data, {
       headers: data.getHeaders()
     })
-    .then((resp) => {
-      const jsonText = convert.xml2json(resp.data, { compact: true });
+    .then((resp) => E.right(resp.data))
+    .catch((error: Error) => E.left([error.name,  error.message]))
+}
+
+async function grobidProcessReferences(pdfFile: string): Promise<E.Either<string[], Reference[]>> {
+  const data = new FormData()
+  data.append('input', fs.createReadStream(pdfFile))
+
+  return grobidProcessReferencesToXML(pdfFile)
+    .then((response) => {
+      if (E.isLeft(response)) {
+        return response;
+      }
+      const xml = response.right;
+
+      const jsonText = convert.xml2json(xml, { compact: true });
       const jsonData = JSON.parse(jsonText)
       const back = jsonData.TEI.text.back;
       const bibliography: any[] = back.div.listBibl.biblStruct
@@ -110,8 +124,8 @@ export function registerCommands(args: YArgsT) {
       .then(() => {
         console.log('success');
       });
-
   });
+
   registerCmd(
     args,
     'show-pdf-refs',
@@ -130,6 +144,34 @@ export function registerCommands(args: YArgsT) {
       })
       .catch((error: Error) => {
         console.log(`Error: ${error.message}`);
+      })
+    ;
+  });
+
+  registerCmd(
+    args,
+    'grobid-get-refs-xml',
+    'Extract PDF references using Grobid service, return Grobid-XML',
+    config(
+      opt.cwd,
+      opt.file('pdf'),
+      opt.str('out'),
+    ),
+  )(async (args: any) => {
+    const { pdf, out } = args;
+
+    await grobidProcessReferencesToXML(pdf)
+      .then((result) => {
+        if (E.isLeft(result)) {
+          putStrLn('Error processing references');
+          putStrLn(result.left.join('\n'));
+          return;
+        }
+        fs.writeFileSync(out, result.right);
+        putStrLn('Success');
+      })
+      .catch((error: Error) => {
+        putStrLn(`Error: ${error.message}`);
       })
     ;
   });

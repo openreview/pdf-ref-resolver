@@ -5,7 +5,7 @@
     "outDir": "dist",
     "rootDirs": ["src/"],
 
-    "noEmit": true,
+    "noEmit": false,
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
     "sourceMap": true,

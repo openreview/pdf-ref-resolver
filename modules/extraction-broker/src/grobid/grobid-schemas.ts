@@ -1,4 +1,4 @@
-import _ from 'lodash';
+// import _ from 'lodash';
 import * as io from 'io-ts';
 import * as E from 'fp-ts/Either'
 import { pipe } from 'fp-ts/function';
@@ -12,6 +12,7 @@ export const Attributes = io.partial({
   page: io.string,
   from: io.string,
   to: io.string,
+  published: io.string,
   'xml:id': io.string
 }, 'Attributes');
 

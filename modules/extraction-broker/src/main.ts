@@ -2,11 +2,11 @@
 
 import {
   YArgs,
-} from '~/cli/arglib';
+} from '~/util/arglib';
 
-import * as grobidIo from './app/grobid-io';
-import * as mongoIo from './app/mongodb';
-import * as grobidData from './app/grobid-data';
+import * as grobidIo from './grobid/grobid-io';
+import * as grobidData from './grobid/grobid-data';
+import * as mongoIo from './db/mongodb';
 
 grobidIo.registerCommands(YArgs);
 mongoIo.registerCommands(YArgs);
