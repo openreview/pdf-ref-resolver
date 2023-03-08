@@ -61,17 +61,19 @@ async function grobidProcessReferences(pdfFile: string): Promise<E.Either<string
       const back = jsonData.TEI.text.back;
       const bibliography: any[] = back.div.listBibl.biblStruct
 
-      bibliography.forEach(reference => {
+      // n.b., I'm processing references one at a time to make it easier to
+      // output any errors next to the input that failed
+      const refs = bibliography.flatMap(reference => {
         const decoded = decodeGrobidReference(reference);
         if (E.isLeft(decoded)) {
           const error = decoded.left.join('\n');
           prettyPrint({ msg: 'Error', reference, error });
+          return [];
         }
+        return [decoded.right];
       });
 
-      const refs = decodeGrobidReferences(bibliography);
-
-      return refs;
+      return E.right(refs);
     });
 }
 

@@ -4,6 +4,7 @@ import * as io from 'io-ts';
 import * as E from 'fp-ts/Either'
 import { pipe } from 'fp-ts/function';
 import { PathReporter } from 'io-ts/lib/PathReporter';
+import { prettyPrint } from '~/util/pretty-print';
 
 type JSAttrVal = number | boolean | string;
 export const JSAttrVal = io.union([io.number, io.boolean, io.string]);
@@ -14,8 +15,8 @@ export const JSAttributes = io.record(io.string, JSAttrVal)
 export interface JSElement {
   type: 'element';
   name: string;
-  attributes: JSAttributes;
-  elements: Array<JSElement | JSTextNode>;
+  attributes?: JSAttributes;
+  elements?: Array<JSElement | JSTextNode>;
 }
 
 export interface JSTextNode {
@@ -36,12 +37,18 @@ export const JSChild: io.Type<JSChild> = io.recursion(
 );
 
 export const JSElement: io.Type<JSElement> = io.recursion(
-  'JSElement', () => io.type({
-    type: io.literal('element'),
-    name: io.string,
-    attributes: JSAttributes,
-    elements: io.array(JSChild)
-  }));
+  'JSElement', () =>
+  io.intersection([
+    io.type({
+      type: io.literal('element'),
+      name: io.string,
+    }),
+    io.partial({
+      attributes: JSAttributes,
+      elements: io.array(JSChild)
+    })
+  ], 'JSElement')
+);
 
 
 
@@ -57,10 +64,8 @@ export function parseJSDocument(root: unknown): E.Either<string[], JSRoot> {
   return pipe(
     JSRoot.decode(root),
     E.mapLeft(errors => {
-      errors.map(err => {
-        console.log({ err });
-      });
       const report = PathReporter.report(E.left(errors));
+      prettyPrint({ report });
       return report;
     })
   );
@@ -79,7 +84,7 @@ export function findElement(
       return false;
     }
     const elMatch = pred(el);
-    const attrMatch = predAttrs ? predAttrs(el.attributes) : true;
+    const attrMatch = predAttrs && el.attributes ? predAttrs(el.attributes) : true;
     return elMatch && attrMatch;
   });
 
@@ -98,16 +103,20 @@ export function findElements(
       return false;
     }
     const elMatch = pred(el);
-    const attrMatch = predAttrs ? predAttrs(el.attributes) : true;
+    const attrMatch = predAttrs && el.attributes ? predAttrs(el.attributes) : true;
     return elMatch && attrMatch;
   });
 }
 
 export function getElementText(elem: JSElement): string | undefined {
-  if (elem.elements.length !== 1) {
+  const childs = elem.elements;
+  if (childs === undefined) {
     return;
   }
-  const e0 = elem.elements[0];
+  if (childs.length !== 1) {
+    return;
+  }
+  const e0 = childs[0];
   if (!JSTextNode.is(e0)) {
     return;
   }

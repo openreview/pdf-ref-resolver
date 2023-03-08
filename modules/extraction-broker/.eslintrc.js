@@ -14,6 +14,7 @@ module.exports = {
     '@typescript-eslint/no-floating-promises':['off'],
     '@typescript-eslint/no-unused-vars':['off'],
     '@typescript-eslint/explicit-function-return-type':['off'],
+    '@typescript-eslint/explicit-member-accessibility': ['off'],
     '@rushstack/typedef-var':['off'],
     'quotes': 'off',
     '@typescript-eslint/quotes': ['error', 'single'],

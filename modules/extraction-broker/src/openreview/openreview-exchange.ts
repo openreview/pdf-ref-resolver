@@ -1,5 +1,5 @@
-/*
- * Interface to communicate with OpenReview
+/**
+ * Low-level interface to communicate with OpenReview REST Api
  */
 
 import _ from 'lodash';
@@ -10,7 +10,11 @@ import {
   AxiosInstance,
   AxiosError
 } from 'axios';
+
+import { Logger } from 'winston';
+
 import { initConfig } from '~/util/config';
+import { getLogger } from '~/util/basic-logging';
 
 type ErrorTypes = AxiosError | unknown;
 
@@ -24,6 +28,7 @@ export interface Credentials {
 }
 
 export class OpenReviewExchange {
+
   credentials?: Credentials;
   user: string;
   password: string;
@@ -32,7 +37,7 @@ export class OpenReviewExchange {
 
   constructor() {
     const config = initConfig();
-    this.log = getServiceLogger('OpenReviewExchange')
+    this.log = getLogger('OpenReviewExchange')
     this.apiBaseURL = config.get('openreview:restApi');
     this.user = config.get('openreview:restUser');
     this.password = config.get('openreview:restPassword');
@@ -95,7 +100,7 @@ export class OpenReviewExchange {
         .get(url, { params: query })
         .then(response => response.data);
 
-    return this.apiAttempt(run, 1);
+    return this.apiAttempt(run, retries);
   }
 
   async apiPOST<PD extends object, R>(url: string, postData: PD, retries: number = 1): Promise<R | undefined> {
@@ -104,7 +109,7 @@ export class OpenReviewExchange {
         .post(url, postData)
         .then(response => response.data);
 
-    return this.apiAttempt(run, 1);
+    return this.apiAttempt(run, retries);
   }
 
   async apiAttempt<R>(apiCall: () => Promise<R>, retries: number): Promise<R | undefined> {
@@ -119,12 +124,11 @@ export class OpenReviewExchange {
         return this.apiAttempt(apiCall, retries - 1);
       });
   }
-
 }
 
 
 function isAxiosError(error: any): error is AxiosError {
-  return error['isAxiosError'] !== undefined && error['isAxiosError'];
+  return error.isAxiosError !== undefined && error.isAxiosError;
 }
 
 export function displayRestError(error: ErrorTypes): void {
