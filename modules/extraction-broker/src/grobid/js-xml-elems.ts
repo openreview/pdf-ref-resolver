@@ -11,11 +11,11 @@ import { prettyPrint } from '~/util/pretty-print';
  * Convert XML into a structured JSON object, and provide functions
  * for searching and traversing the converted JSON
  *
- *
- * - xml-js is a library for converting XML -> JSON
- * - d-forest is a library for searching nested objects to find nodes
- *   matching a given critera
- * - io-ts is a schema and encoder/decoder library
+ * + Based on:
+ *    + xml-js is a library for converting XML -> JSON
+ *    + d-forest is a library for searching nested objects to find nodes
+ *        matching a given critera
+ *    + io-ts is a schema and encoder/decoder library
  **/
 
 
@@ -53,8 +53,7 @@ export const JSChild: io.Type<JSChild> = io.recursion(
 );
 
 export const JSElement: io.Type<JSElement> = io.recursion(
-  'JSElement', () =>
-  io.intersection([
+  'JSElement', () => io.intersection([
     io.type({
       type: io.literal('element'),
       name: io.string,

@@ -2,7 +2,7 @@
  * Run REST operations against OpenReview
  */
 
-import { OpenReviewExchange } from "./openreview-exchange";
+import { OpenReviewExchange } from './openreview-exchange';
 
 interface TitleSearchParams {
   term: string;

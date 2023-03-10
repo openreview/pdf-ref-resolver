@@ -1,6 +1,7 @@
 #!/bin/env node
 
 import {
+  runRegisteredCmds,
   YArgs,
 } from '~/util/arglib';
 
@@ -12,13 +13,4 @@ grobidCli.registerCommands(YArgs);
 mongoCli.registerCommands(YArgs);
 appCli.registerCommands(YArgs);
 
-// eslint-disable-next-line @typescript-eslint/no-unused-expressions
-YArgs
-  .demandCommand(1, 'You need at least one command before moving on')
-  .strict()
-  .help()
-  .fail((err: any) => {
-    console.log('Error', err);
-    YArgs.showHelp();
-  })
-  .argv;
+runRegisteredCmds(YArgs);

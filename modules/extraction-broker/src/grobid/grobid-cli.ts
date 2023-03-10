@@ -1,5 +1,5 @@
-
 import * as E from 'fp-ts/Either';
+
 import {
   registerCmd,
   config,
@@ -7,77 +7,52 @@ import {
   YArgsT
 } from '~/util/arglib';
 import fs from 'fs';
-import { gbdXmlToReferences, runOpenReviewQueries } from './grobid-data';
+import { gbdXmlToReferences, printReferences, runOpenReviewQueries } from './grobid-etl';
 import { prettyPrint, putStrLn } from '~/util/pretty-print';
-import { extractRefs, extractPdf, grobidProcessReferencesToXML } from './grobid-io';
+import {  grobidProcessReferences } from './grobid-queries';
 
 export function registerCommands(args: YArgsT) {
+
   registerCmd(
     args,
-    'extract-pdf',
-    'Extract PDF using Grobid service',
+    'extract-references',
+    'Extract PDF references using Grobid service, match with OpenReview papers',
     config(
       opt.env,
-      opt.cwd,
       opt.file('pdf'),
+      // opt.str('out'),
     ),
   )(async (args: any) => {
     const { pdf } = args;
 
-    await extractPdf(pdf)
-      .then(() => {
-        console.log('success');
-      });
-  });
+    const xmlString = await grobidProcessReferences(pdf)
+    if (E.isLeft(xmlString)) {
+      putStrLn('Error processing references');
+      putStrLn(xmlString.left.join('\n'));
+      return;
+    }
 
-  registerCmd(
-    args,
-    'show-pdf-refs',
-    'Extract PDF references using Grobid service, printing the result',
-    config(
-      opt.cwd,
-      opt.file('pdf'),
-      opt.str('out'),
-    ),
-  )(async (args: any) => {
-    const { pdf, out } = args;
+    const refsOrError = gbdXmlToReferences(xmlString.right);
+    if (E.isLeft(refsOrError)) {
+      putStrLn('Error transforming grobid XML');
+      putStrLn(refsOrError.left.join('\n'));
+      return;
+    }
 
-    await extractRefs(pdf)
-      .then((jsonData: string) => {
-        fs.writeFileSync(out, jsonData);
-      })
-      .catch((error: Error) => {
-        console.log(`Error: ${error.message}`);
-      })
-    ;
-  });
+    const refs = refsOrError.right;
 
-  registerCmd(
-    args,
-    'grobid-get-refs-xml',
-    'Extract PDF references using Grobid service, return Grobid-XML',
-    config(
-      opt.cwd,
-      opt.file('pdf'),
-      opt.str('out'),
-    ),
-  )(async (args: any) => {
-    const { pdf, out } = args;
+    await runOpenReviewQueries(refs);
 
-    await grobidProcessReferencesToXML(pdf)
-      .then((result) => {
-        if (E.isLeft(result)) {
-          putStrLn('Error processing references');
-          putStrLn(result.left.join('\n'));
-          return;
-        }
-        fs.writeFileSync(out, result.right);
-        putStrLn('Success');
-      })
-      .catch((error: Error) => {
-        putStrLn(`Error: ${error.message}`);
-      })
-    ;
+    await printReferences(refs);
+
+    // TODO opt: write xml
+    // TODO opt: commit to db
+    // TODO opt: print results
+    //
+    // fs.writeFileSync(out, result.right);
+    // .catch((error: Error) => {
+    //   putStrLn(`Error: ${error.message}`);
+    // })
   });
 
   registerCmd(

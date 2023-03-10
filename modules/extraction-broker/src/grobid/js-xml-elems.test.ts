@@ -1,5 +1,5 @@
 import { prettyPrint } from '~/util/pretty-print';
-import { findElement, parseJSDocument } from './jselems';
+import { findElement, parseJSDocument } from './js-xml-elems';
 
 //
 describe('JSElem traversal', () => {

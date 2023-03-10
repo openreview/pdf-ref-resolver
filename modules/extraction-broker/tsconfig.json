@@ -12,8 +12,10 @@
     "declarationMap": true,
     "inlineSources": true,
     "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
     "strict": true,
     "esModuleInterop": true,
+    "importHelpers": true,
     "types": ["node", "heft-jest"],
 
     "module": "commonjs",

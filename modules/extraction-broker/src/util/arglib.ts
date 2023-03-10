@@ -204,6 +204,7 @@ export function registerCmd(
     );
   };
 }
+
 export async function runRegisteredCmds(useYargs: Argv): Promise<void> {
   const res = useYargs
     .strictCommands()
