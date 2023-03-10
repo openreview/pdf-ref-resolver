@@ -1,4 +1,4 @@
-/*
+/**
  * Run REST operations against OpenReview
  */
 
@@ -7,6 +7,8 @@ import { OpenReviewExchange } from "./openreview-exchange";
 interface TitleSearchParams {
   term: string;
   source: string;
+  offset: number;
+  limit: number;
 }
 
 export class OpenReviewQueries {

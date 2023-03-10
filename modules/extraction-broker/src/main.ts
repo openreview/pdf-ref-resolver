@@ -4,13 +4,13 @@ import {
   YArgs,
 } from '~/util/arglib';
 
-import * as grobidIo from './grobid/grobid-io';
-import * as grobidData from './grobid/grobid-data';
-import * as mongoIo from './db/mongodb';
+import * as grobidCli from './grobid/grobid-cli';
+import * as mongoCli from './db/mongodb';
+import * as appCli from './app/app-cli';
 
-grobidIo.registerCommands(YArgs);
-mongoIo.registerCommands(YArgs);
-grobidData.registerCommands(YArgs);
+grobidCli.registerCommands(YArgs);
+mongoCli.registerCommands(YArgs);
+appCli.registerCommands(YArgs);
 
 // eslint-disable-next-line @typescript-eslint/no-unused-expressions
 YArgs

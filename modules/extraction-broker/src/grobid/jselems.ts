@@ -1,11 +1,27 @@
-import df from 'd-forest';
 import _ from 'lodash';
+import df from 'd-forest';
+import convert from 'xml-js'
 import * as io from 'io-ts';
 import * as E from 'fp-ts/Either'
 import { pipe } from 'fp-ts/function';
 import { PathReporter } from 'io-ts/lib/PathReporter';
 import { prettyPrint } from '~/util/pretty-print';
 
+/**
+ * Convert XML into a structured JSON object, and provide functions
+ * for searching and traversing the converted JSON
+ *
+ *
+ * - xml-js is a library for converting XML -> JSON
+ * - d-forest is a library for searching nested objects to find nodes
+ *   matching a given critera
+ * - io-ts is a schema and encoder/decoder library
+ **/
+
+
+/**
+ * Schema definitions
+ */
 type JSAttrVal = number | boolean | string;
 export const JSAttrVal = io.union([io.number, io.boolean, io.string]);
 
@@ -50,8 +66,6 @@ export const JSElement: io.Type<JSElement> = io.recursion(
   ], 'JSElement')
 );
 
-
-
 export interface JSRoot {
   elements: Array<JSElement>;
 }
@@ -59,6 +73,18 @@ export interface JSRoot {
 export const JSRoot = io.type({
   elements: io.array(JSElement)
 }, 'JSRoot');
+
+export type JSNode = JSRoot | JSElement | JSTextNode;
+
+/**
+ * Create JSDocuments
+ **/
+export function xmlStringToJSDocument(xmlString: string): E.Either<string[], JSRoot> {
+  const asJson = convert.xml2js(xmlString, {
+    compact: false,
+  });
+  return parseJSDocument(asJson);
+}
 
 export function parseJSDocument(root: unknown): E.Either<string[], JSRoot> {
   return pipe(
@@ -70,6 +96,7 @@ export function parseJSDocument(root: unknown): E.Either<string[], JSRoot> {
     })
   );
 }
+
 
 export function findElement(
   root: object,
@@ -91,7 +118,7 @@ export function findElement(
 }
 
 export function findElements(
-  root: object,
+  root: JSNode,
   pred: (e: JSElement) => boolean,
   predAttrs?: (attrs: JSAttributes) => boolean
 ): JSElement[] {
@@ -116,9 +143,19 @@ export function getElementText(elem: JSElement): string | undefined {
   if (childs.length !== 1) {
     return;
   }
-  const e0 = childs[0];
-  if (!JSTextNode.is(e0)) {
+  const c0 = childs[0];
+  if (!JSTextNode.is(c0)) {
     return;
   }
-  return e0.text;
+  return c0.text;
+}
+
+export function findElementText(
+  root: object,
+  pred: (e: JSElement) => boolean,
+  predAttrs?: (attrs: JSAttributes) => boolean
+): string | undefined {
+  const elem = findElement(root, pred, predAttrs)
+  if (elem === undefined) return;
+  return getElementText(elem);
 }

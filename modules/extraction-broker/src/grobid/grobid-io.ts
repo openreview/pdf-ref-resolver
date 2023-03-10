@@ -33,7 +33,7 @@ export function grobidReq(): AxiosInstance {
   return axios.create(config);
 }
 
-async function grobidProcessReferencesToXML(pdfFile: string): Promise<E.Either<string[], string>> {
+export async function grobidProcessReferencesToXML(pdfFile: string): Promise<E.Either<string[], string>> {
   const data = new FormData()
   data.append('input', fs.createReadStream(pdfFile))
 
@@ -77,7 +77,7 @@ async function grobidProcessReferences(pdfFile: string): Promise<E.Either<string
     });
 }
 
-async function extractPdf(pdfFile: string) {
+export async function extractPdf(pdfFile: string) {
   putStrLn(`Extracting ${pdfFile}`);
   const maybeRefs = await grobidProcessReferences(pdfFile);
   if (E.isLeft(maybeRefs)) {
@@ -92,7 +92,7 @@ async function extractPdf(pdfFile: string) {
   await insertPdfReferences(pdfFile, refs);
 }
 
-async function extractRefs(pdfFile: string): Promise<string> {
+export async function extractRefs(pdfFile: string): Promise<string> {
   const maybeRefs = await grobidProcessReferences(pdfFile);
   if (E.isLeft(maybeRefs)) {
     const errors = maybeRefs.left;
@@ -107,74 +107,4 @@ async function extractRefs(pdfFile: string): Promise<string> {
     references: refs
   };
   return JSON.stringify(output, null, 4);
-}
-
-export function registerCommands(args: YArgsT) {
-  registerCmd(
-    args,
-    'extract-pdf',
-    'Extract PDF using Grobid service',
-    config(
-      opt.env,
-      opt.cwd,
-      opt.file('pdf'),
-    ),
-  )(async (args: any) => {
-    const { pdf } = args;
-
-    await extractPdf(pdf)
-      .then(() => {
-        console.log('success');
-      });
-  });
-
-  registerCmd(
-    args,
-    'show-pdf-refs',
-    'Extract PDF references using Grobid service, printing the result',
-    config(
-      opt.cwd,
-      opt.file('pdf'),
-      opt.str('out'),
-    ),
-  )(async (args: any) => {
-    const { pdf, out } = args;
-
-    await extractRefs(pdf)
-      .then((jsonData: string) => {
-        fs.writeFileSync(out, jsonData);
-      })
-      .catch((error: Error) => {
-        console.log(`Error: ${error.message}`);
-      })
-    ;
-  });
-
-  registerCmd(
-    args,
-    'grobid-get-refs-xml',
-    'Extract PDF references using Grobid service, return Grobid-XML',
-    config(
-      opt.cwd,
-      opt.file('pdf'),
-      opt.str('out'),
-    ),
-  )(async (args: any) => {
-    const { pdf, out } = args;
-
-    await grobidProcessReferencesToXML(pdf)
-      .then((result) => {
-        if (E.isLeft(result)) {
-          putStrLn('Error processing references');
-          putStrLn(result.left.join('\n'));
-          return;
-        }
-        fs.writeFileSync(out, result.right);
-        putStrLn('Success');
-      })
-      .catch((error: Error) => {
-        putStrLn(`Error: ${error.message}`);
-      })
-    ;
-  });
 }
