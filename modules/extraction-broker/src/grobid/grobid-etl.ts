@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { prettyPrint, putStrLn } from '~/util/pretty-print';
 
 import {
@@ -27,8 +28,8 @@ export interface Person {
 export interface Reference {
   analytic?: Analytic;
   monograph?: Monograph;
-  matchingNotes?: OpenReviewNote[];
-  source: JSElement;
+  // matchingNotes?: OpenReviewNote[];
+  // source: JSElement;
 }
 
 export interface Analytic {
@@ -39,6 +40,21 @@ export interface Analytic {
 export interface Monograph {
   title?: string;
   authors: Person[];
+}
+
+export interface ReferenceContext {
+  reference: Reference;
+  matchingNotes?: OpenReviewNote[];
+  source: JSElement;
+  reportText: string[];
+}
+
+// Keep track of a few stats for the full bibliography
+export interface BibliographyStats {
+  referenceCount: number;
+  withTitles: number;
+  withAuthors: number;
+  withMatchingNotes: number;
 }
 
 export function getReferenceTitle(ref: Reference): string | undefined {
@@ -55,7 +71,7 @@ export function getReferenceAuthors(ref: Reference): Person[] | undefined {
   return authors;
 }
 
-export function gbdXmlToReferences(grobidXml: string): E.Either<string[], Reference[]> {
+export function gbdXmlToReferences(grobidXml: string): E.Either<string[], ReferenceContext[]> {
   // performs a simple mapping of xml -> json, but the output is very verbose
   // and not easy or useful to work with, so we remap the keys/values
 
@@ -67,7 +83,7 @@ export function gbdXmlToReferences(grobidXml: string): E.Either<string[], Refere
 
   const rawRefs = findElements(rootElem, n => n.name === 'biblStruct');
 
-  const refs: Reference[] = rawRefs
+  const refs: ReferenceContext[] = rawRefs
     .flatMap(rawRef => {
       const maybeRef = gbdToReference(rawRef)
       return maybeRef ? [maybeRef] : [];
@@ -76,18 +92,23 @@ export function gbdXmlToReferences(grobidXml: string): E.Either<string[], Refere
   return E.right(refs);
 }
 
-export function gbdToReference(jsElem: JSElement): Reference | undefined {
+export function gbdToReference(jsElem: JSElement): ReferenceContext {
 
   const analytic = gbdToAnalytic(jsElem);
   const monograph = gbdToMonograph(jsElem);
 
   const reference: Reference = {
     analytic,
-    monograph,
-    source: jsElem
+    monograph
   };
 
-  return reference;
+  const refContext: ReferenceContext = {
+    reference,
+    source: jsElem,
+    reportText: []
+  }
+
+  return refContext;
 }
 
 export function gbdToPerson(persElem: JSElement): Person | undefined {
@@ -140,10 +161,11 @@ export function gbdToMonograph(jsElem: JSElement): Monograph | undefined {
 }
 
 
-export async function runOpenReviewQueries(refs: Reference[]) {
+export async function runOpenReviewQueries(refContexts: ReferenceContext[]) {
   const orQueries = new OpenReviewQueries();
 
-  for await (const ref of refs) {
+  for await (const ctx of refContexts) {
+    const ref = ctx.reference;
     const title = getReferenceTitle(ref);
     if (title === undefined || title.length === 0) {
       putStrLn('No title found in grobid reference');
@@ -158,32 +180,70 @@ export async function runOpenReviewQueries(refs: Reference[]) {
         id, title, authors
       };
     });
-    ref.matchingNotes = notes;
+    ctx.matchingNotes = notes;
   }
 }
 
-export async function printReferences(refs: Reference[]): Promise<void> {
+function putReportLn(refCtx: ReferenceContext, ...msgs: string[]) {
+  const msg = msgs.join('')
+  // putStrLn(msg)
+  refCtx.reportText.push(msg);
+}
+
+export function outputBiblioSummary(biblioStats: BibliographyStats, refContexts: ReferenceContext[]) {
+  prettyPrint({ biblioStats });
+
+  const reportBlocks = refContexts.map((ctx, refNum) => {
+    const report = ctx.reportText.join('\n');
+    return report;
+  });
+
+  const reports = reportBlocks.join('\n\n');
+  putStrLn(reports);
+}
+
+export async function summarizeReferences(refContexts: ReferenceContext[]): Promise<BibliographyStats> {
   const leven = (await import('leven')).default;
 
-  refs.forEach((ref, refNum) => {
+  function percentDiff(s1: string, s2: string): number {
+    const dist = leven(s1.toLowerCase(), s2.toLowerCase());
+    const ubound = Math.max(s1.length, s2.length);
+    const unchanged = (ubound - dist)
+    const ratio = unchanged / ubound;
+    const perc = Math.round(ratio * 100)
+    return perc;
+
+  }
+  const biblioStats: BibliographyStats = {
+    referenceCount: refContexts.length,
+    withTitles: 0,
+    withAuthors: 0,
+    withMatchingNotes: 0,
+  };
+
+  refContexts.forEach((ctx, refNum) => {
+    const ref = ctx.reference;
     const titleOrUndef = getReferenceTitle(ref);
     const authors = getReferenceAuthors(ref);
     const title = titleOrUndef ? titleOrUndef : 'No title found for reference';
 
-    const refMarker = `[${refNum}]`;
+    const refMarker = `[${refNum+1}]`;
     const indent = ' '.repeat(refMarker.length + 1);
-    putStrLn(`${refMarker} ${title}`)
+    putReportLn(ctx, `${refMarker} ${title}`);
 
     if (!titleOrUndef) {
-      prettyPrint({ source: ref.source });
+      prettyPrint({ source: ctx.source });
       return;
     }
+    biblioStats.withTitles += 1;
 
     if (!authors) {
-      putStrLn(`No authors found for reference. Source was:`)
-      prettyPrint({ source: ref.source });
+      putReportLn(ctx, `No authors found for reference. Source was:`)
+      prettyPrint({ source: ctx.source });
       return;
     }
+    putReportLn(ctx, '== Matching OpenReview Notes')
+    biblioStats.withAuthors += authors.length === 0 ? 0 : 1;
 
     const authorNameList = authors.map(author => {
       const nameparts = [
@@ -195,47 +255,68 @@ export async function printReferences(refs: Reference[]): Promise<void> {
     });
 
     if (authorNameList.length === 0) {
-      putStrLn(indent, `No Authors`)
-      prettyPrint({ source: ref.source });
+      putReportLn(ctx, indent, `No Authors`)
+      prettyPrint({ source: ctx.source });
     } else {
       const authorNames = authorNameList.join('; ')
-      putStrLn(indent, authorNames)
+      putReportLn(ctx, indent, authorNames)
     }
 
-    const { matchingNotes } = ref;
+    const { matchingNotes } = ctx;
     if (!matchingNotes) {
-      putStrLn(indent, '<OpenReview note matching was not run>');
-      putStrLn('\n');
+      putReportLn(ctx, indent, '<OpenReview note matching was not run>');
+      putReportLn(ctx, '\n');
       return;
     }
 
     if (matchingNotes.length === 0) {
-      putStrLn(indent, '<No matching OpenReview notes found>');
-      putStrLn('\n');
+      putReportLn(ctx, indent, '<No matching OpenReview notes found>');
+      putReportLn(ctx, '\n');
       return;
     }
 
-    putStrLn(indent, '== Matching OpenReview notes ==');
-    const matches = matchingNotes.map(note => {
-      const titleDist = leven(title.toLowerCase(), note.title.toLowerCase());
-      const ubound = Math.max(title.length, note.title.length);
-      const unchanged = (ubound - titleDist)
-      const ratio = unchanged / ubound;
-      const perc = Math.round(ratio * 100)
-      // putStrLn(`dist: ${title} -> ${note.title}`);
-      // putStrLn(`   leven:     ${titleDist}`);
-      // putStrLn(`   upper-b:   ${ubound}`);
-      // putStrLn(`   unchanged: ${unchanged}`);
-      // putStrLn(`   ratio:     ${ratio}`);
-      // putStrLn(`   perc:      ${perc}`);
-      // putStrLn()
-
-      return `${note.id} (${perc}% match)`;
-      // putStrLn('    ', title);
-      // putStrLn('    ', authors.join('; '))
+    const matchPercents: [number, string][] = matchingNotes.map(note => {
+      const diff = percentDiff(note.title, title);
+      const msg = `${note.id} (${diff}% title match)`;
+      return [diff, msg];
     });
-    putStrLn(indent, matches.join(', '));
-    putStrLn('\n');
 
+    const strongMatches = matchPercents
+      .filter(([n, ]) => n > 95)
+      .map(([, diff]) => diff);
+
+    const weakMatches = matchPercents
+      .filter(([n, ]) => 75 <= n && n <= 95)
+      .map(([, diff]) => diff);
+
+    const nonMatches = matchPercents
+      .filter(([n, ]) => n < 75)
+      .map(([, diff]) => diff);
+
+    if (strongMatches.length > 0) {
+      putReportLn(ctx, indent, '  === Strong Matches');
+      strongMatches.forEach(m => {
+        putReportLn(ctx, indent, indent, m);
+      })
+      biblioStats.withMatchingNotes += 1;
+    }
+
+    if (weakMatches.length > 0) {
+      putReportLn(ctx, indent, '  === Weak Matches');
+      weakMatches.forEach(m => {
+        putReportLn(ctx, indent, indent, m);
+      });
+    }
+
+    if (nonMatches.length > 0) {
+      putReportLn(ctx, indent, '  === Non Matching Candidates');
+      nonMatches.forEach(m => {
+        putReportLn(ctx, indent, indent, m);
+      });
+    }
+
+    putReportLn(ctx, '\n');
   });
+
+  return biblioStats;
 }
