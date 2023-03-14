@@ -75,5 +75,5 @@ common/autoinstallers/*/.npmrc
 
 temp/
 
-*.d/
+**/*.d
 config-*.json

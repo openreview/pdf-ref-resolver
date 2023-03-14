@@ -1,6 +1,7 @@
 import _ from 'lodash';
-import { prettyPrint, putStrLn } from '~/util/pretty-print';
+import fs from 'fs';
 
+import { prettyPrint, putStrLn } from '~/util/pretty-print';
 import {
   findElement,
   findElements,
@@ -28,8 +29,6 @@ export interface Person {
 export interface Reference {
   analytic?: Analytic;
   monograph?: Monograph;
-  // matchingNotes?: OpenReviewNote[];
-  // source: JSElement;
 }
 
 export interface Analytic {
@@ -76,7 +75,13 @@ export function gbdXmlToReferences(grobidXml: string): E.Either<string[], Refere
   // and not easy or useful to work with, so we remap the keys/values
 
   const docOrErr = xmlStringToJSDocument(grobidXml);
-  if (E.isLeft(docOrErr)) return docOrErr;
+  if (E.isLeft(docOrErr)) {
+    const errors = docOrErr.left;
+    errors.push('Grobid returned XML (first 100 chars)');
+    errors.push(' >' + grobidXml.substring(0, 100));
+
+    return E.left(errors);
+  };
 
   const biblio = docOrErr.right;
   const rootElem = biblio.elements[0];
@@ -186,20 +191,43 @@ export async function runOpenReviewQueries(refContexts: ReferenceContext[]) {
 
 function putReportLn(refCtx: ReferenceContext, ...msgs: string[]) {
   const msg = msgs.join('')
-  // putStrLn(msg)
   refCtx.reportText.push(msg);
 }
 
-export function outputBiblioSummary(biblioStats: BibliographyStats, refContexts: ReferenceContext[]) {
-  prettyPrint({ biblioStats });
+type OutputOpts = {
+  outputFile?: string;
+  toConsole: boolean;
+}
 
-  const reportBlocks = refContexts.map((ctx, refNum) => {
+export function outputBiblioSummary(
+  biblioStats: BibliographyStats,
+  refContexts: ReferenceContext[],
+  { outputFile, toConsole }: OutputOpts
+) {
+  const biblioSummary = [
+    `Reference Count: ${biblioStats.referenceCount}`,
+    `   with titles      : ${biblioStats.withTitles}`,
+    `   with note matches: ${biblioStats.withMatchingNotes}`,
+  ].join('\n');
+
+  const reportBlocks = refContexts.map((ctx) => {
     const report = ctx.reportText.join('\n');
     return report;
   });
 
-  const reports = reportBlocks.join('\n\n');
-  putStrLn(reports);
+  const reports = [
+    biblioSummary,
+    '',
+    reportBlocks.join('\n'),
+  ].join('\n')
+
+  if (toConsole) {
+    putStrLn(reports);
+  }
+
+  if (outputFile) {
+    fs.writeFileSync(outputFile, reports, {});
+  }
 }
 
 export async function summarizeReferences(refContexts: ReferenceContext[]): Promise<BibliographyStats> {
@@ -227,7 +255,7 @@ export async function summarizeReferences(refContexts: ReferenceContext[]): Prom
     const authors = getReferenceAuthors(ref);
     const title = titleOrUndef ? titleOrUndef : 'No title found for reference';
 
-    const refMarker = `[${refNum+1}]`;
+    const refMarker = `[${refNum + 1}]`;
     const indent = ' '.repeat(refMarker.length + 1);
     putReportLn(ctx, `${refMarker} ${title}`);
 
@@ -242,7 +270,6 @@ export async function summarizeReferences(refContexts: ReferenceContext[]): Prom
       prettyPrint({ source: ctx.source });
       return;
     }
-    putReportLn(ctx, '== Matching OpenReview Notes')
     biblioStats.withAuthors += authors.length === 0 ? 0 : 1;
 
     const authorNameList = authors.map(author => {
@@ -263,6 +290,9 @@ export async function summarizeReferences(refContexts: ReferenceContext[]): Prom
     }
 
     const { matchingNotes } = ctx;
+
+    putReportLn(ctx, indent, '== Matching OpenReview Notes');
+
     if (!matchingNotes) {
       putReportLn(ctx, indent, '<OpenReview note matching was not run>');
       putReportLn(ctx, '\n');
@@ -282,15 +312,15 @@ export async function summarizeReferences(refContexts: ReferenceContext[]): Prom
     });
 
     const strongMatches = matchPercents
-      .filter(([n, ]) => n > 95)
+      .filter(([n,]) => n > 95)
       .map(([, diff]) => diff);
 
     const weakMatches = matchPercents
-      .filter(([n, ]) => 75 <= n && n <= 95)
+      .filter(([n,]) => 75 <= n && n <= 95)
       .map(([, diff]) => diff);
 
     const nonMatches = matchPercents
-      .filter(([n, ]) => n < 75)
+      .filter(([n,]) => n < 75)
       .map(([, diff]) => diff);
 
     if (strongMatches.length > 0) {

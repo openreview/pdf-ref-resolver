@@ -75,13 +75,13 @@ export class OpenReviewExchange {
       return this.credentials;
     }
 
-    this.log.info(`Logging in as ${this.user}`);
+    this.log.debug(`Logging in as ${this.user}`);
     if (this.user === undefined || this.password === undefined) {
       return Promise.reject(new Error('Openreview API: user or password not defined'));
     }
     const creds = await this.postLogin();
 
-    this.log.info(`Logged in as ${creds.user.id}`);
+    this.log.info(`Successfully logged in to OpenReview as ${creds.user.id}`);
 
     this.credentials = creds;
     return creds;
@@ -116,6 +116,7 @@ export class OpenReviewExchange {
     if (retries === 0) return undefined;
 
     await this.getCredentials();
+
     return apiCall()
       .catch(error => {
         displayRestError(error);
