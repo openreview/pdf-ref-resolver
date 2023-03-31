@@ -4,7 +4,7 @@ export type SlidingWindowFunc = <A>(xs: ReadonlyArray<A>) => ReadonlyArray<Reado
 
 export function slidingWindow(
   window: number,
-  offset: number = 1,
+  offset = 1,
 ): SlidingWindowFunc {
   return xs => (
     xs.length < window ? []

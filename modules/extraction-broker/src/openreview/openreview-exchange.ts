@@ -94,7 +94,7 @@ export class OpenReviewExchange {
       .catch(displayRestError);
   }
 
-  async apiGET<R>(url: string, query: Record<string, string | number>, retries: number = 1): Promise<R | undefined> {
+  async apiGET<R>(url: string, query: Record<string, string | number>, retries = 1): Promise<R | undefined> {
     const run = () =>
       this.configAxios()
         .get(url, { params: query })
@@ -103,7 +103,7 @@ export class OpenReviewExchange {
     return this.apiAttempt(run, retries);
   }
 
-  async apiPOST<PD extends object, R>(url: string, postData: PD, retries: number = 1): Promise<R | undefined> {
+  async apiPOST<PD extends object, R>(url: string, postData: PD, retries = 1): Promise<R | undefined> {
     const run = () =>
       this.configAxios()
         .post(url, postData)

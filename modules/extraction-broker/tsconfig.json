@@ -16,7 +16,7 @@
     "strict": true,
     "esModuleInterop": true,
     "importHelpers": true,
-    "types": ["node", "heft-jest"],
+    "types": ["node", "jest"],
 
     "module": "commonjs",
     "target": "ESNext",

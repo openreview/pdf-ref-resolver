@@ -15,7 +15,7 @@ export function mongoConnectionString(): string {
   const config = initConfig();
   const ConnectionURL = config.get('mongodb:connectionUrl');
   const MongoDBName = config.get('mongodb:dbName');
-  let connectUrl = `${ConnectionURL}/${MongoDBName}`;
+  const connectUrl = `${ConnectionURL}/${MongoDBName}`;
   return connectUrl;
 }
 

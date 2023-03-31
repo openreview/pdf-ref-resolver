@@ -10,7 +10,7 @@ import { prettyPrint } from '~/util/pretty-print';
  * Given a  transcoder and an input,  encode and decode several  times to ensure
  * that data is properly serialized.
  **/
-export function isIsomorphic<A, IO>(ioType: io.Type<A, IO, IO>, input: IO, verbose: boolean = false): boolean {
+export function isIsomorphic<A, IO>(ioType: io.Type<A, IO, IO>, input: IO, verbose = false): boolean {
   const maybeDecoded = ioType.decode(input);
   if (E.isLeft(maybeDecoded)) {
     const report = PathReporter.report(maybeDecoded);

@@ -81,7 +81,7 @@ export function gbdXmlToReferences(grobidXml: string): E.Either<string[], Refere
     errors.push(' >' + grobidXml.substring(0, 100));
 
     return E.left(errors);
-  };
+  }
 
   const biblio = docOrErr.right;
   const rootElem = biblio.elements[0];
@@ -266,7 +266,7 @@ export async function summarizeReferences(refContexts: ReferenceContext[]): Prom
     biblioStats.withTitles += 1;
 
     if (!authors) {
-      putReportLn(ctx, `No authors found for reference. Source was:`)
+      putReportLn(ctx, 'No authors found for reference. Source was:')
       prettyPrint({ source: ctx.source });
       return;
     }
@@ -282,7 +282,7 @@ export async function summarizeReferences(refContexts: ReferenceContext[]): Prom
     });
 
     if (authorNameList.length === 0) {
-      putReportLn(ctx, indent, `No Authors`)
+      putReportLn(ctx, indent, 'No Authors')
       prettyPrint({ source: ctx.source });
     } else {
       const authorNames = authorNameList.join('; ')
