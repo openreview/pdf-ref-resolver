@@ -27,9 +27,10 @@ Store results of extraction
 Display results of extraction
 
 ## OpenReview search example
-for example:
-You find this submission:
-https://openreview.net/pdf?id=pnSyqRXx73
+```
+
+Workflow (with OpenReview API integration)
+Given a pdf
 You find this reference:
 [16] Matthew Henderson, Rami Al-Rfou, Brian Strope, Yun-Hsuan Sung, László Lukács, Ruiqi Guo,
 Sanjiv Kumar, Balint Miklos, and Ray Kurzweil. Efficient natural language response suggestion
@@ -55,3 +56,5 @@ Sanjiv Kumar, Balint Miklos, and Ray Kurzweil" == [
 ]
 It matched then return the result:
 https://openreview.net/pdf?id=pnSyqRXx73, reference_text, TRUP16KqFNf
+
+```

@@ -5,18 +5,13 @@ const env = process.env.NODE_ENV;
 const defaultOpts: Options = {
   sourcemap: true,
   clean: env === 'prod',
-  dts: true,
+  dts: false,
   format: ['cjs'],
   minify: env === 'prod',
-  skipNodeModulesBundle: true,
+  skipNodeModulesBundle: env !== 'prod',
   entryPoints: ['src/main.ts'],
   target: 'es2020',
-  outDir: 'dist',
-  outExtension({}) {
-    return {
-      js: `.bundle.js`,
-    }
-  },
+  outDir: 'bundle'
 };
 
 export default defineConfig((options) => {

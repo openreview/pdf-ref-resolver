@@ -15,7 +15,7 @@ export function registerCommands(args: YArgsT) {
     'Extract PDF references using Grobid service, match with OpenReview papers',
     config(
       opt.env,
-      opt.file('pdf'),
+      opt.file('pdf: input pdf file'),
       // opt.flag('recursive', false),
       opt.flag('to-file', false),
       opt.flag('to-console', true),

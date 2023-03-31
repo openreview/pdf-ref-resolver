@@ -9,9 +9,11 @@
   "scripts": {
     "clean": "rm -r dist/",
     "compile": "tsc",
+    "compile:watch": "tsc --watch",
     "lint": "eslint src/",
-    "tsup:build": "tsup",
-    "build": "run-p compile lint tsup:build",
+    "tsup": "tsup",
+    "watch": "tsup --watch src/ --onSuccess 'run-p compile lint'",
+    "build": "run-p compile lint tsup",
     "bundle": "NODE_ENV=prod tsup --clean",
     "rebuild": "run-s clean build"
   },
