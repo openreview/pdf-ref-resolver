@@ -1,4 +1,3 @@
-
 import _ from 'lodash';
 
 import fs from 'fs-extra';
@@ -7,7 +6,7 @@ import path from 'path';
 import yargs, { Argv, Arguments, Options, MiddlewareFunction } from 'yargs';
 import { putStrLn, prettyPrint} from '../util/pretty-print';
 
-export const YArgs = yargs;
+export const YArgs = yargs();
 
 export type YArgsT = yargs.Argv;
 

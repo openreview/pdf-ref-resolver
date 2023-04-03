@@ -3,9 +3,6 @@
   "private": false,
   "version": "1.0.0",
   "license": "ISC",
-  "main": "dist/main.bundle.js",
-  "module": "dist/main.mjs",
-  "types": "dist/main.d.ts",
   "scripts": {
     "clean": "rm -r dist/",
     "compile": "tsc",

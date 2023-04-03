@@ -18,9 +18,8 @@
     "importHelpers": true,
     "types": ["node", "jest"],
 
-    "module": "commonjs",
-    "target": "ESNext",
-    "lib": ["ESNext"],
+    "module": "CommonJS",
+    "target": "ES2020",
 
     "paths": {
       "~/*" : ["./src/*"]

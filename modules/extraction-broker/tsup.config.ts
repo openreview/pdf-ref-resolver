@@ -8,7 +8,9 @@ const defaultOpts: Options = {
   dts: false,
   format: ['cjs'],
   minify: env === 'prod',
-  skipNodeModulesBundle: env !== 'prod',
+  skipNodeModulesBundle: false,
+  treeshake: false,
+  noExternal: [/./],
   entryPoints: ['src/main.ts'],
   target: 'es2020',
   outDir: 'bundle'

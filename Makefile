@@ -48,3 +48,16 @@ $(grobid_zip):
 	cd $(wd)
 	@echo Fetching Zipfile
 	wget "https://github.com/kermitt2/grobid/archive/"$(grobid_zipfile)
+
+
+cli_src := modules/extraction-broker
+
+cli/build:
+	cd $(cli_src) 
+	npm install
+	npm run build
+	npm run bundle 
+
+cli/install:
+	cd $(cli_src) 
+	sudo cp bundle/main.js /usr/local/bin/pdf-ref-resolver
