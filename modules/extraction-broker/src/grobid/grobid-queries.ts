@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import * as E from 'fp-ts/Either'
+import * as E from 'fp-ts/lib/Either'
 
 import axios, {
   AxiosRequestConfig,

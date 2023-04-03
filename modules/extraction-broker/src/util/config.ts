@@ -67,7 +67,7 @@ export function initConfig(): typeof nconf {
 
   const envFile = `config-${envMode}.json`;
 
-  nconf.argv().env();
+  // nconf.argv().env();
 
   const envPath = findAncestorFile('.', envFile, ['conf', '.']);
   if (envPath === undefined) {

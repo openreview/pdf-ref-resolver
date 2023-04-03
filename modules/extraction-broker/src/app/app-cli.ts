@@ -7,8 +7,11 @@ import {
 } from '~/util/arglib';
 
 import { runExtractReferences } from './pipeline';
+import { OpenReviewQueries } from '~/openreview/openreview-queries';
+import { putStrLn } from '~/util/pretty-print';
 
 export function registerCommands(args: YArgsT) {
+
   registerCmd(
     args,
     'extract-references',
@@ -32,5 +35,20 @@ export function registerCommands(args: YArgsT) {
     const { pdf, toFile, toConsole, overwrite, format } = args;
 
     await runExtractReferences({ pdf, toFile, toConsole, overwrite, format });
+  });
+
+  registerCmd(
+    args,
+    'test-login',
+    'just for testing',
+    config(
+      opt.env,
+    ),
+  )(async (args: any) => {
+    const { env } = args;
+
+    const q = new OpenReviewQueries();
+    await q.openExchange.getCredentials();
+    putStrLn('Done..')
   });
 }

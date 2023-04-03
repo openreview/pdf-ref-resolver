@@ -6,13 +6,13 @@ const defaultOpts: Options = {
   sourcemap: true,
   clean: env === 'prod',
   dts: false,
-  format: ['cjs'],
+  format: ['cjs', 'esm'],
   minify: env === 'prod',
   skipNodeModulesBundle: false,
   treeshake: false,
   noExternal: [/./],
   entryPoints: ['src/main.ts'],
-  target: 'es2020',
+  target: 'esnext',
   outDir: 'bundle'
 };
 

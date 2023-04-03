@@ -3,10 +3,15 @@
   "private": false,
   "version": "1.0.0",
   "license": "ISC",
+  "main": "dist/main.js",
+  "bin": {
+    "pdf-ref-resolver": "dist/main.js"
+  },
   "scripts": {
     "clean": "rm -r dist/",
-    "compile": "tsc",
-    "compile:watch": "tsc --watch",
+    "tsc": "tsc",
+    "compile": "run-s tsc alias",
+    "alias": "bin/fix-path-aliases -f ./dist",
     "lint": "eslint src/",
     "tsup": "tsup",
     "watch": "tsup --watch src/ --onSuccess 'run-p compile lint'",
@@ -27,6 +32,7 @@
     "mongodb": "^5.1.0",
     "mongoose": "^7.0.1",
     "nconf": "^0.12.0",
+    "tslib": "^2.5.0",
     "winston": "^3.8.2",
     "xml-js": "^1.6.11",
     "yargs": "^17.7.1"

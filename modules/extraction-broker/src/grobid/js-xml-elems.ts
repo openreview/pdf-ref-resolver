@@ -2,8 +2,8 @@ import _ from 'lodash';
 import df from 'd-forest';
 import convert from 'xml-js'
 import * as io from 'io-ts';
-import * as E from 'fp-ts/Either'
-import { pipe } from 'fp-ts/function';
+import * as E from 'fp-ts/lib/Either'
+import { pipe } from 'fp-ts/lib/function';
 import { PathReporter } from 'io-ts/lib/PathReporter';
 import { prettyPrint } from '~/util/pretty-print';
 

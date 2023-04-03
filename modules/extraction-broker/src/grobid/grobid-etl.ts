@@ -10,7 +10,7 @@ import {
   xmlStringToJSDocument
 } from './js-xml-elems';
 
-import * as E from 'fp-ts/Either';
+import * as E from 'fp-ts/lib/Either';
 
 import { OpenReviewQueries } from '~/openreview/openreview-queries';
 
@@ -229,6 +229,8 @@ export function outputBiblioSummary(
     fs.writeFileSync(outputFile, reports, {});
   }
 }
+
+// import leven from 'leven';
 
 export async function summarizeReferences(refContexts: ReferenceContext[]): Promise<BibliographyStats> {
   const leven = (await import('leven')).default;

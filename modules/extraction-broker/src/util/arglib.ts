@@ -4,14 +4,18 @@ import fs from 'fs-extra';
 import path from 'path';
 
 import yargs, { Argv, Arguments, Options, MiddlewareFunction } from 'yargs';
+
+import { hideBin } from 'yargs/helpers';
 import { putStrLn, prettyPrint} from '../util/pretty-print';
 
-export const YArgs = yargs();
+
+export function yargsInstance(): yargs.Argv {
+  return yargs(hideBin(process.argv));
+}
 
 export type YArgsT = yargs.Argv;
 
 export type ArgvApp = (ya: Argv) => Argv;
-
 
 export function config(...fs: ArgvApp[]): ArgvApp {
   return ya => _.reduce(fs, (acc, f) => f(acc), ya);
@@ -204,13 +208,18 @@ export function registerCmd(
   };
 }
 
+import { argv } from 'process';
+
 export async function runRegisteredCmds(useYargs: Argv): Promise<void> {
+  const scriptpath = argv[1];
+  const script = path.basename(scriptpath);
   const res = useYargs
+    .scriptName(script)
     .strictCommands()
     .demandCommand(1, 'You need at least one command before moving on')
     .help()
-    .fail((err) => {
-      console.log('RunCLI Error', err);
+    .fail((msg: string, err: Error, yargInst) => {
+      console.log('RunCLI Error', msg);
       useYargs.showHelp();
     })
     .argv;

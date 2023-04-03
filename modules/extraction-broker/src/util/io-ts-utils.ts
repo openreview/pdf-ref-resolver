@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import * as E from 'fp-ts/Either'
+import * as E from 'fp-ts/lib/Either'
 import * as io from 'io-ts';
 import { PathReporter } from 'io-ts/lib/PathReporter';
 import { prettyPrint } from '~/util/pretty-print';
