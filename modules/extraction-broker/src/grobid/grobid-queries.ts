@@ -32,3 +32,14 @@ export async function grobidProcessReferences(pdfFile: string): Promise<E.Either
     .then((resp) => E.right(resp.data))
     .catch((error: Error) => E.left([error.name,  error.message]))
 }
+
+export async function grobidIsAlive(): Promise<boolean> {
+  // return await grobidReq()
+  //   .get('/api/health', {
+  //     headers: data.getHeaders()
+  //   })
+  //   .then((resp) => E.right(true))
+  //   .catch((error: Error) => E.left([error.name,  error.message]))
+  return false;
+
+}

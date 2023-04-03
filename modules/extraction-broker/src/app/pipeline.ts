@@ -16,10 +16,13 @@ import {
   grobidProcessReferences
 } from '~/grobid/grobid-queries';
 
+export type OutputFormat = 'txt' | 'json';
+
 type Args = {
   pdf: string;
   toFile: boolean;
   toConsole: boolean;
+  format: OutputFormat;
   overwrite: boolean;
 }
 
@@ -30,14 +33,21 @@ export function outputExists(file: string, overwrite: boolean): boolean {
   return fs.existsSync(file);
 }
 
+function isGrobidRunning(): boolean {
+  return false;
+}
+
 export async function runExtractReferences({
   pdf,
   toFile,
   toConsole,
+  format,
   overwrite
 }: Args) {
+  // check grobid is running
+  // check OpenReview API is available
 
-  const outputFilename = `${pdf}.report.txt`
+  const outputFilename = `${pdf}.refs.${format}`
   if (outputExists(outputFilename, overwrite)) {
     putStrLn(`Output file already exists: ${outputFilename}`);
     putStrLn('Skipping. Use --overwrite to force');
