@@ -10,12 +10,13 @@
   "scripts": {
     "clean": "rm -r dist/",
     "tsc": "tsc",
-    "compile": "run-s tsc alias",
+    "tsc:watch": "tsc --watch",
     "alias": "bin/fix-path-aliases -f ./dist",
     "lint": "eslint src/",
-    "tsup": "tsup",
-    "watch": "tsup --watch src/ --onSuccess 'run-p compile lint'",
-    "build": "run-p compile lint tsup",
+    "tsup": "tsup --onSuccess 'run-p alias lint'",
+    "tsup:watch": "tsup --watch src/ --onSuccess 'run-p alias lint'",
+    "watch": "run-p tsc:watch tsup:watch",
+    "build": "run-p tsc lint tsup",
     "bundle": "NODE_ENV=prod tsup --clean",
     "rebuild": "run-s clean build"
   },

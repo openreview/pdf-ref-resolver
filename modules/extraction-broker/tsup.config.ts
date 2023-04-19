@@ -2,18 +2,19 @@ import { Options, defineConfig } from 'tsup';
 
 const env = process.env.NODE_ENV;
 
+const isProd = env === 'prod';
+
 const defaultOpts: Options = {
-  sourcemap: true,
-  clean: env === 'prod',
+  sourcemap: !isProd,
+  clean: true,
   dts: false,
-  format: ['cjs', 'esm'],
-  minify: env === 'prod',
-  skipNodeModulesBundle: false,
+  format: ['cjs'],
+  minify: isProd,
+  skipNodeModulesBundle: true,
   treeshake: false,
-  noExternal: [/./],
   entryPoints: ['src/main.ts'],
   target: 'esnext',
-  outDir: 'bundle'
+  outDir: 'dist'
 };
 
 export default defineConfig((options) => {

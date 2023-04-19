@@ -6,7 +6,7 @@ import path from 'path';
 import yargs, { Argv, Arguments, Options, MiddlewareFunction } from 'yargs';
 
 import { hideBin } from 'yargs/helpers';
-import { putStrLn, prettyPrint} from '../util/pretty-print';
+import { putStrLn, prettyPrint } from '../util/pretty-print';
 
 
 export function yargsInstance(): yargs.Argv {
@@ -61,19 +61,19 @@ const optAndDesc = (optAndDesc: string, ext?: Options) => (ya: Argv): Argv => {
   return ya.option(optname, opts);
 };
 
-const optFlag = (odesc: string, def?: boolean) =>  optAndDesc(odesc, {
+const optFlag = (odesc: string, def?: boolean) => optAndDesc(odesc, {
   type: 'boolean',
   demandOption: def === undefined,
   default: def
 });
 
-const optNum = (odesc: string, def?: number) =>  optAndDesc(odesc, {
+const optNum = (odesc: string, def?: number) => optAndDesc(odesc, {
   type: 'number',
   demandOption: def === undefined,
   default: def
 });
 
-const optString = (odesc: string, def?: string) =>  optAndDesc(odesc, {
+const optString = (odesc: string, def?: string) => optAndDesc(odesc, {
   type: 'string',
   demandOption: def === undefined,
   default: def
@@ -90,11 +90,11 @@ const optEnv = (ya: Argv) => {
     describe: 'Specify NODE_ENV',
     type: 'string',
     choices: ['dev', 'prod'],
-    default:'dev'
+    default: 'dev'
   });
 
   const middleFunc: MiddlewareFunction = (argv: Arguments) => {
-    const argvEnv = typeof argv.env === 'string'? argv.env : 'dev'
+    const argvEnv = typeof argv.env === 'string' ? argv.env : 'dev'
     const env = process.env.NODE_ENV;
     process.env.NODE_ENV = env || argvEnv;
   };
@@ -104,20 +104,26 @@ const optEnv = (ya: Argv) => {
   return ya;
 };
 
-
-const existingPath = (pathAndDesc: string) => (ya: Argv) => {
+const existingPath = (pathAndDesc: string, overrideArgs?: Partial<Options>) => (ya: Argv) => {
   let [pathname, desc] = pathAndDesc.includes(':')
     ? pathAndDesc.split(':')
     : [pathAndDesc, `directory ${pathAndDesc}`];
 
   pathname = pathname.trim();
   desc = desc.trim();
-  ya.option(pathname, {
+
+  const optArgs: Options = {
     describe: desc,
     type: 'string',
     demandOption: true,
     requiresArg: true,
-  });
+  };
+  if (overrideArgs) {
+    Object.assign(optArgs, overrideArgs);
+  }
+
+
+  ya.option(pathname, optArgs);
 
   const middleFunc: MiddlewareFunction = (argv: Arguments) => {
     const p = resolveArgPath(argv, pathname);
@@ -140,8 +146,8 @@ const existingPath = (pathAndDesc: string) => (ya: Argv) => {
   return ya;
 };
 
-export const existingDir = (dirAndDesc: string): (ya: Argv) => Argv => {
-  return existingPath(dirAndDesc);
+export const existingDir = (dirAndDesc: string, overrideArgs?: Partial<Options>): (ya: Argv) => Argv => {
+  return existingPath(dirAndDesc, overrideArgs);
 };
 
 export const existingFile = (fileAndDesc: string): (ya: Argv) => Argv => {

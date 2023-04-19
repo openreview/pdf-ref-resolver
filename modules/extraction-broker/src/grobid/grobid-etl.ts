@@ -1,4 +1,4 @@
-import _ from 'lodash';
+// import _ from 'lodash';
 import fs from 'fs';
 
 import { prettyPrint, putStrLn } from '~/util/pretty-print';
@@ -13,6 +13,7 @@ import {
 import * as E from 'fp-ts/lib/Either';
 
 import { OpenReviewQueries } from '~/openreview/openreview-queries';
+import { warn } from 'console';
 
 export interface OpenReviewNote {
   id: string;
@@ -196,14 +197,96 @@ function putReportLn(refCtx: ReferenceContext, ...msgs: string[]) {
 
 type OutputOpts = {
   outputFile?: string;
-  toConsole: boolean;
+}
+
+export async function createJsonFormatOutput(
+  biblioStats: BibliographyStats,
+  refContexts: ReferenceContext[],
+  // { outputFile  }: OutputOpts
+): Promise<object> {
+
+  const leven = (await import('leven')).default;
+
+  function percentDiff(s1: string, s2: string): number {
+    const dist = leven(s1.toLowerCase(), s2.toLowerCase());
+    const ubound = Math.max(s1.length, s2.length);
+    const unchanged = (ubound - dist)
+    const ratio = unchanged / ubound;
+    const perc = Math.round(ratio * 100)
+    return perc;
+  }
+  const biblioSummary = {
+    ReferenceCount: biblioStats.referenceCount,
+    WithTitlesCount: biblioStats.withTitles,
+    WithNoteMatchesCount: biblioStats.withMatchingNotes
+  };
+
+  const references = refContexts.map((ctx) => {
+    const ref = ctx.reference;
+    const { matchingNotes } = ctx;
+
+    const warnings: string[] = [];
+    const resultRec: any = {
+      warnings
+    };
+
+    const title = getReferenceTitle(ref);
+    const authors = getReferenceAuthors(ref);
+    if (title) {
+      resultRec.title = title;
+
+      if (!matchingNotes) {
+        warnings.push('OpenReview title matching was not run');
+      } else {
+        const matchPercents: [number, string][] = matchingNotes.map(note => {
+          const diff = percentDiff(note.title, title);
+          const msg = `${note.id} (${diff}% title match)`;
+          return [diff, msg];
+        });
+
+        const strongMatches = matchPercents
+          .filter(([n,]) => n > 95)
+          .map(([, diff]) => diff);
+
+        resultRec.openreviewMatches = strongMatches;
+      }
+    } else {
+      warnings.push('No Title Found');
+    }
+
+    if (authors && authors.length > 0) {
+      const names = authors.map(author => {
+        let name = '';
+        const { first, middle, last } = author;
+        if (first) {
+          name += `${first}`;
+        }
+        if (middle) {
+          name += ` ${middle}`;
+        }
+        if (last) {
+          name += ` ${last}`;
+        }
+
+        return name.trim();
+      });
+      resultRec.authors = names;
+    } else {
+      warnings.push('No Authors Found')
+    }
+    return resultRec;
+  });
+
+  return {
+    summary: biblioSummary,
+    references
+  };
 }
 
 export function outputBiblioSummary(
   biblioStats: BibliographyStats,
   refContexts: ReferenceContext[],
-  { outputFile, toConsole }: OutputOpts
-) {
+): string {
   const biblioSummary = [
     `Reference Count: ${biblioStats.referenceCount}`,
     `   with titles      : ${biblioStats.withTitles}`,
@@ -221,16 +304,8 @@ export function outputBiblioSummary(
     reportBlocks.join('\n'),
   ].join('\n')
 
-  if (toConsole) {
-    putStrLn(reports);
-  }
-
-  if (outputFile) {
-    fs.writeFileSync(outputFile, reports, {});
-  }
+  return reports;
 }
-
-// import leven from 'leven';
 
 export async function summarizeReferences(refContexts: ReferenceContext[]): Promise<BibliographyStats> {
   const leven = (await import('leven')).default;
@@ -242,8 +317,8 @@ export async function summarizeReferences(refContexts: ReferenceContext[]): Prom
     const ratio = unchanged / ubound;
     const perc = Math.round(ratio * 100)
     return perc;
-
   }
+
   const biblioStats: BibliographyStats = {
     referenceCount: refContexts.length,
     withTitles: 0,

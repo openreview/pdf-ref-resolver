@@ -7,8 +7,6 @@ import {
 } from '~/util/arglib';
 
 import { runExtractReferences } from './pipeline';
-import { OpenReviewQueries } from '~/openreview/openreview-queries';
-import { putStrLn } from '~/util/pretty-print';
 
 export function registerCommands(args: YArgsT) {
 
@@ -18,37 +16,29 @@ export function registerCommands(args: YArgsT) {
     'Extract PDF references using Grobid service, match with OpenReview papers',
     config(
       opt.env,
-      opt.file('pdf: input pdf file'),
-      // opt.flag('recursive', false),
-      opt.flag('to-file', false),
+      opt.file('pdf: Input pdf file'),
+      opt.flag('to-file: Write output to file; Filename is `input.pdf.refs.(txt|json)`', false),
+      // opt.dir(
+      //   'output-path: Specify a directory to write output (if --to-file=true). Defaults to same as input PDF',
+      //   { default: '/dev/null' }
+      // ),
+      opt.ion('output-path', {
+        describe: 'Specify a directory to write output (if --to-file=true). Defaults to same as input PDF',
+        type: 'string',
+        default: undefined
+      }),
       opt.ion('format', {
         describe: 'Specify JSon or plain text output',
         type: 'string',
         choices: ['txt', 'json'],
-        default:'json'
-        
+        default: 'json'
       }),
-      opt.flag('to-console', true),
-      opt.flag('overwrite', false),
+      opt.flag('overwrite: Overwrite any existing output file', false),
     ),
   )(async (args: any) => {
-    const { pdf, toFile, toConsole, overwrite, format } = args;
+    const { pdf, toFile, overwrite, format, outputPath } = args;
 
-    await runExtractReferences({ pdf, toFile, toConsole, overwrite, format });
+    await runExtractReferences({ pdf, toFile, overwrite, format, outputPath });
   });
 
-  registerCmd(
-    args,
-    'test-login',
-    'just for testing',
-    config(
-      opt.env,
-    ),
-  )(async (args: any) => {
-    const { env } = args;
-
-    const q = new OpenReviewQueries();
-    await q.openExchange.getCredentials();
-    putStrLn('Done..')
-  });
 }
