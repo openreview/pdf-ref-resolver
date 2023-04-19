@@ -2,59 +2,57 @@
 Extract references from PDF bibliographies and find the corresponding papers in OpenReview
 
 # Installation
-## Build and install Grobid Server
-## (Optional) Install Biblio-Glutton
 ## Prerequisites
-    - unzip
-    - mongodb
-    - java
-    - node
+    - unzip, java, node, make
 
-# System Components
+## Build and install Grobid Server
+    > make grobid/fetch
+    > make grobid/build
 
-## Grobid REST Service
-Runs extraction
+## Build and install node app (installs to system node/node_modules location)
+    > make cli/build
+    > make cli/install
 
-## Extraction Broker
-Call Grobid Service with PDFs, write results into MongoDB
-Construct and run OpenReview queries based on titles/author
-Write OpenReview queries to MongodB
+## (Optional) Install Biblio-Glutton
+    > Grobid can use Biblio-Glutton to improve performance if necessary
 
-## MongoDB
-Store results of extraction
 
-## Webserver
-Display results of extraction
+# Running
+## Help options
+    > pdf-ref-resolver extract-references --help
+    
+    Extract PDF references using Grobid service, match with OpenReview papers
+    
+    Options:
+      --version      Show version number                                   [boolean]
+      --help         Show help                                             [boolean]
+      --pdf          Input pdf file                              [string] [required]
+      --to-file      Write output to file; Filename is `input.pdf.refs.(txt|json)`
+                                                          [boolean] [default: false]
+      --output-path  Specify a directory to write output (if --to-file=true).
+                     Defaults to same as input PDF                          [string]
+      --format       Specify JSon or plain text output
+                                 [string] [choices: "txt", "json"] [default: "json"]
+      --config       Path to config file                         [string] [required]
+      --overwrite    Overwrite any existing output file   [boolean] [default: false]
 
-## OpenReview search example
-```
+## Config file Format
+    {
+        "openreview": {
+            "restApi": "https://api.openreview.net",
+            "restUser": "my-username",
+            "restPassword": "my-password"
+        },
+    }
 
-Workflow (with OpenReview API integration)
-Given a pdf
-You find this reference:
-[16] Matthew Henderson, Rami Al-Rfou, Brian Strope, Yun-Hsuan Sung, László Lukács, Ruiqi Guo,
-Sanjiv Kumar, Balint Miklos, and Ray Kurzweil. Efficient natural language response suggestion
-for smart reply. arXiv preprint arXiv:1705.00652, 2017.
-You extract the title:
-Efficient natural language response suggestion for smart reply
-You search the title in OpenReview:
-https://api.openreview.net/notes/search?term=%22Efficient+natural+language+response+suggestion+for+smart+reply%22&group=all&content=all&source=all
-You found a result:
-https://api.openreview.net/notes?id=TRUP16KqFNf
-You check the author list:
-"Matthew Henderson, Rami Al-Rfou, Brian Strope, Yun-Hsuan Sung, László Lukács, Ruiqi Guo,
-Sanjiv Kumar, Balint Miklos, and Ray Kurzweil" == [
-"Matthew L. Henderson",
-"Rami Al-Rfou",
-"Brian Strope",
-"Yun-Hsuan Sung",
-"László Lukács",
-"Ruiqi Guo",
-"Sanjiv Kumar",
-"Balint Miklos",
-"Ray Kurzweil"
-]
-It matched then return the result:
-https://openreview.net/pdf?id=pnSyqRXx73, reference_text, TRUP16KqFNf
+## Examples
+### Write JSON-formatted output file to current directory
+    > pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --format json --to-file --output-path .
 
-```
+### Write JSON-formatted output to same directory as input pdf 
+    > pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --format json --to-file 
+
+### Write text-formatted output to stdout
+    > pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --format txt 
+
+

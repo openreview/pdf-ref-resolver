@@ -16,7 +16,7 @@
     "tsup": "tsup --onSuccess 'run-p alias lint'",
     "tsup:watch": "tsup --watch src/ --onSuccess 'run-p alias lint'",
     "watch": "run-p tsc:watch tsup:watch",
-    "build": "run-p tsc lint tsup",
+    "build": "run-p tsc tsup",
     "bundle": "NODE_ENV=prod tsup --clean",
     "rebuild": "run-s clean build"
   },
