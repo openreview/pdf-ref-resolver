@@ -21,8 +21,11 @@ launcher := $(deploy_service)/bin/grobid-service
 
 all: grobid/deploy 
 
-grobid/fetch: $(grobid_zip)
-	@echo Fetching 
+grobid/fetch: 
+	@echo Fetching Zipfile
+	[[ -d $(wd) ]] || mkdir $(wd)
+	cd $(wd)
+	wget "https://github.com/kermitt2/grobid/archive/"$(grobid_zipfile)
 
 grobid/deploy: $(deploy)
 	@echo Deploying 
@@ -43,13 +46,6 @@ $(grobid_src): | $(grobid_zip)
 	cd $(wd)
 	unzip $(grobid_zipfile) 
 
-$(grobid_zip): 
-	[[ -d $(wd) ]] || mkdir $(wd)
-	cd $(wd)
-	@echo Fetching Zipfile
-	wget "https://github.com/kermitt2/grobid/archive/"$(grobid_zipfile)
-
-
 cli_src := modules/extraction-broker
 
 cli/build:
@@ -60,4 +56,7 @@ cli/build:
 
 cli/install:
 	cd $(cli_src) 
-	sudo cp bundle/main.js /usr/local/bin/pdf-ref-resolver
+	npm i -g ./
+
+cli/clean:
+	cd $(cli_src) 
