@@ -7,7 +7,6 @@ import {
 } from '~/util/arglib';
 
 import { runExtractReferences } from './pipeline';
-import { prettyPrint } from '~/util/pretty-print';
 import { ConfigType, initConfig } from '~/util/config';
 
 export function registerCommands(args: YArgsT) {
@@ -36,8 +35,6 @@ export function registerCommands(args: YArgsT) {
     ),
   )(async (args: any) => {
     const { pdf, toFile, overwrite, format, outputPath, config } = args;
-
-    prettyPrint({ args })
 
     const loadedConfig = initConfig(config)
 

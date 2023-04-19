@@ -55,4 +55,3 @@ Extract references from PDF bibliographies and find the corresponding papers in 
 ### Write text-formatted output to stdout
     > pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --format txt 
 
-

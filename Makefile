@@ -18,6 +18,7 @@ deploy_service := $(deploy)/grobid-service-0.7.2
 deploy_home := $(deploy)/grobid-home
 launcher := $(deploy_service)/bin/grobid-service
 
+SHELL := /bin/bash
 .ONESHELL:
 
 install: grobid/fetch 
