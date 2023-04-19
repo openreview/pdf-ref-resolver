@@ -13,7 +13,7 @@ import {
 
 import { Logger } from 'winston';
 
-import { initConfig } from '~/util/config';
+import { ConfigType, initConfig } from '~/util/config';
 import { getLogger } from '~/util/basic-logging';
 
 type ErrorTypes = AxiosError | unknown;
@@ -35,8 +35,7 @@ export class OpenReviewExchange {
   apiBaseURL: string;
   log: Logger;
 
-  constructor() {
-    const config = initConfig();
+  constructor(config: ConfigType) {
     this.log = getLogger('OpenReviewExchange')
     this.apiBaseURL = config.get('openreview:restApi');
     this.user = config.get('openreview:restUser');

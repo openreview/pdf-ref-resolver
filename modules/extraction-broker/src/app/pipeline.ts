@@ -18,6 +18,7 @@ import {
   grobidIsAlive,
   grobidProcessReferences
 } from '~/grobid/grobid-queries';
+import { ConfigType } from '~/util/config';
 
 export type OutputFormat = 'txt' | 'json';
 
@@ -27,6 +28,7 @@ type Args = {
   outputPath?: string;
   format: OutputFormat;
   overwrite: boolean;
+  config: ConfigType;
 }
 
 export function outputExists(file: string, overwrite: boolean): boolean {
@@ -41,7 +43,8 @@ export async function runExtractReferences({
   toFile,
   format,
   outputPath,
-  overwrite
+  overwrite,
+  config
 }: Args) {
   // check grobid is running
   const isAlive = await grobidIsAlive();
@@ -89,7 +92,7 @@ export async function runExtractReferences({
 
   const refs = refsOrError.right;
 
-  await runOpenReviewQueries(refs);
+  await runOpenReviewQueries(refs, config);
 
   const biblioStats = await summarizeReferences(refs);
   let outputContent = '';

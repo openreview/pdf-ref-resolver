@@ -168,9 +168,9 @@ export const configFile = (ya: Argv): Argv => {
         throw new Error('Non-existent config file specified');
       }
       // Set working directory to config file dir if not already set
-      if (!argv.cwd) {
-        argv.cwd = path.dirname(configFile);
-      }
+      // if (!argv.cwd) {
+      //   argv.cwd = path.dirname(configFile);
+      // }
       const buf = fs.readFileSync(configFile);
       const conf = JSON.parse(buf.toString());
       const confKVs = _.toPairs(conf);

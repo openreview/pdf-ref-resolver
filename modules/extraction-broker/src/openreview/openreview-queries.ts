@@ -2,6 +2,7 @@
  * Run REST operations against OpenReview
  */
 
+import { ConfigType } from '~/util/config';
 import { OpenReviewExchange } from './openreview-exchange';
 
 interface TitleSearchParams {
@@ -14,8 +15,8 @@ interface TitleSearchParams {
 export class OpenReviewQueries {
   openExchange: OpenReviewExchange;
 
-  constructor() {
-    this.openExchange = new OpenReviewExchange();
+  constructor(config: ConfigType) {
+    this.openExchange = new OpenReviewExchange(config);
   }
 
   async queryNotesForTitle(params: Partial<TitleSearchParams>): Promise<any> {

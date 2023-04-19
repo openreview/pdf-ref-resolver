@@ -1,7 +1,5 @@
-// import _ from 'lodash';
-import fs from 'fs';
-
 import { prettyPrint, putStrLn } from '~/util/pretty-print';
+
 import {
   findElement,
   findElements,
@@ -14,6 +12,7 @@ import * as E from 'fp-ts/lib/Either';
 
 import { OpenReviewQueries } from '~/openreview/openreview-queries';
 import { warn } from 'console';
+import { ConfigType } from '~/util/config';
 
 export interface OpenReviewNote {
   id: string;
@@ -167,8 +166,8 @@ export function gbdToMonograph(jsElem: JSElement): Monograph | undefined {
 }
 
 
-export async function runOpenReviewQueries(refContexts: ReferenceContext[]) {
-  const orQueries = new OpenReviewQueries();
+export async function runOpenReviewQueries(refContexts: ReferenceContext[], config: ConfigType) {
+  const orQueries = new OpenReviewQueries(config);
 
   for await (const ctx of refContexts) {
     const ref = ctx.reference;

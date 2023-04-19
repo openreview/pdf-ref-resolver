@@ -10,6 +10,8 @@ export const ENV_MODES = {
   'prod': null,
 };
 
+export type ConfigType = typeof nconf;
+
 export type ENV_MODES = typeof ENV_MODES;
 export type ENV_MODE = keyof ENV_MODES;
 
@@ -26,10 +28,10 @@ export const Env = {
 };
 
 function isFile(p: string | undefined): boolean {
-  return p!==undefined && fs.existsSync(p) && fs.statSync(p).isFile();
+  return p !== undefined && fs.existsSync(p) && fs.statSync(p).isFile();
 }
 function isDir(p: string | undefined): boolean {
-  return p!==undefined && fs.existsSync(p) && fs.statSync(p).isDirectory();
+  return p !== undefined && fs.existsSync(p) && fs.statSync(p).isDirectory();
 }
 
 export function findAncestorFile(
@@ -59,15 +61,18 @@ export function findAncestorFile(
   }
 }
 
-export function initConfig(): typeof nconf {
+export function initConfig(pathToConfig?: string): ConfigType {
+  if (pathToConfig) {
+    nconf.file('env-conf', { file: pathToConfig });
+    return nconf;
+  }
+
   const envMode = getEnv('NODE_ENV');
   if (!isValidEnvMode(envMode)) {
     throw new Error('NODE_ENV not set!');
   }
 
   const envFile = `config-${envMode}.json`;
-
-  // nconf.argv().env();
 
   const envPath = findAncestorFile('.', envFile, ['conf', '.']);
   if (envPath === undefined) {

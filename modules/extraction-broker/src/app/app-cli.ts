@@ -7,6 +7,8 @@ import {
 } from '~/util/arglib';
 
 import { runExtractReferences } from './pipeline';
+import { prettyPrint } from '~/util/pretty-print';
+import { ConfigType, initConfig } from '~/util/config';
 
 export function registerCommands(args: YArgsT) {
 
@@ -15,13 +17,9 @@ export function registerCommands(args: YArgsT) {
     'extract-references',
     'Extract PDF references using Grobid service, match with OpenReview papers',
     config(
-      opt.env,
+      // opt.env,
       opt.file('pdf: Input pdf file'),
       opt.flag('to-file: Write output to file; Filename is `input.pdf.refs.(txt|json)`', false),
-      // opt.dir(
-      //   'output-path: Specify a directory to write output (if --to-file=true). Defaults to same as input PDF',
-      //   { default: '/dev/null' }
-      // ),
       opt.ion('output-path', {
         describe: 'Specify a directory to write output (if --to-file=true). Defaults to same as input PDF',
         type: 'string',
@@ -33,12 +31,17 @@ export function registerCommands(args: YArgsT) {
         choices: ['txt', 'json'],
         default: 'json'
       }),
+      opt.file('config: Path to config file'),
       opt.flag('overwrite: Overwrite any existing output file', false),
     ),
   )(async (args: any) => {
-    const { pdf, toFile, overwrite, format, outputPath } = args;
+    const { pdf, toFile, overwrite, format, outputPath, config } = args;
 
-    await runExtractReferences({ pdf, toFile, overwrite, format, outputPath });
+    prettyPrint({ args })
+
+    const loadedConfig = initConfig(config)
+
+    await runExtractReferences({ pdf, toFile, overwrite, format, outputPath, config: loadedConfig });
   });
 
 }
