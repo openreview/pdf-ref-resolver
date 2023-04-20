@@ -7,7 +7,7 @@ import {
 } from '~/util/arglib';
 
 import { runExtractReferences } from './pipeline';
-import { ConfigType, initConfig } from '~/util/config';
+import { initConfig } from '~/util/config';
 
 export function registerCommands(args: YArgsT) {
 
