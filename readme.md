@@ -3,15 +3,21 @@ Extract references from PDF bibliographies and find the corresponding papers in 
 
 # Installation
 ## Prerequisites
-    - unzip, java, node, make
+    - Docker (For pre-packaged Grobid containers)
+    - node >= 16
 
-## Build and install Grobid Server
-    > make grobid/fetch
-    > make grobid/build
+## Install Grobid
+    > docker pull lfoppiano/grobid:0.7.2
+    > docker run --rm -p 8070:8070 lfoppiano/grobid:0.7.2
 
 ## Build and install node app (installs to system node/node_modules location)
-    > make cli/build
-    > make cli/install
+    > cd ./modules/extraction-broker
+    > npm install
+    > npm run build
+
+Use sudo if node is installed as root:
+    > npm i -g ./
+
 
 ## (Optional) Install Biblio-Glutton
     > Grobid can use Biblio-Glutton to improve performance if necessary
@@ -20,9 +26,9 @@ Extract references from PDF bibliographies and find the corresponding papers in 
 # Running
 ## Help options
     > pdf-ref-resolver extract-references --help
-    
+
     Extract PDF references using Grobid service, match with OpenReview papers
-    
+
     Options:
       --version      Show version number                                   [boolean]
       --help         Show help                                             [boolean]
@@ -37,6 +43,8 @@ Extract references from PDF bibliographies and find the corresponding papers in 
       --overwrite    Overwrite any existing output file   [boolean] [default: false]
 
 ## Config file Format
+Configuration to specify REST endpoints and login info
+
     {
         "openreview": {
             "restApi": "https://api.openreview.net",
@@ -49,9 +57,14 @@ Extract references from PDF bibliographies and find the corresponding papers in 
 ### Write JSON-formatted output file to current directory
     > pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --format json --to-file --output-path .
 
-### Write JSON-formatted output to same directory as input pdf 
-    > pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --format json --to-file 
+### Write JSON-formatted output to same directory as input pdf
+    > pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --format json --to-file
 
 ### Write text-formatted output to stdout
-    > pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --format txt 
+    > pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --format txt
 
+
+
+# TODO
+- Search openreview using alternate rest api (in addition to current api)
+- remove xx% match from output

@@ -1,4 +1,3 @@
-
 import {
   registerCmd,
   config,

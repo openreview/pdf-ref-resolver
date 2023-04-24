@@ -201,7 +201,6 @@ type OutputOpts = {
 export async function createJsonFormatOutput(
   biblioStats: BibliographyStats,
   refContexts: ReferenceContext[],
-  // { outputFile  }: OutputOpts
 ): Promise<object> {
 
   const leven = (await import('leven')).default;
