@@ -77,7 +77,8 @@ Configuration to specify REST endpoints and credentials
 - Search openreview using alternate rest api (in addition to current api)
 
 ## Sample Output
-Summary
+Summary header block, with number of Grobid extracted references, and counts of those with
+valid titles and matches to OpenReview notes.
 ```
 {
   "summary": {
@@ -94,7 +95,9 @@ Reference Entry:
       "refNumber": 5,
 ```
 
-Title / Author fields as extracted by Grobid
+Title / Author fields  as extracted by Grobid. Field 'isValid'  will be false if
+the reference had no title, or could  not be processed for some reason. Messages
+as to reason why will be recorded in the "warnings" array.
 ```
       "title": "Expectation Propagation in Gaussian process dynamical systems",
       "authors": [
@@ -102,15 +105,10 @@ Title / Author fields as extracted by Grobid
         "S Mohamed"
       ],
       "isValid": true,
-```
-
-Any warning messages.
-```
       "warnings": [],
-      "openreviewMatches": [
 ```
 
-A  note from  OpenReview  that matched.  Notes are  matched  by first  searching
+Array of notes from  OpenReview  that matched.  Notes are  matched  by first  searching
 OpenReview,  using Grobid-extracted  title  as keywords,  then  filtered with  a
 string similarity function. Fields titleMatch/nameMatch are numbers 0-100, 100 being
 a perfect match. Name matching uses a string similarity function that doesn't penalize
@@ -118,6 +116,7 @@ deletions from the longer version of the name to the shorter, to allow matching 
 full and abbreviated names, so, e.g.,  "Marc Peter Deisenroth" -> "M P Deisenroth" is a 100% match.
 
 ```
+      "openreviewMatches": [
         {
           "id": "HkNwk_ZObS",
           "authors": [
