@@ -6,7 +6,6 @@ import {
   gbdXmlToReferences,
   summarizeReferences,
   runOpenReviewQueries,
-  outputBiblioSummary,
   createJsonFormatOutput
 } from '~/grobid/grobid-etl';
 
@@ -18,15 +17,14 @@ import {
   grobidIsAlive,
   grobidProcessReferences
 } from '~/grobid/grobid-queries';
-import { ConfigType } from '~/util/config';
 
-export type OutputFormat = 'txt' | 'json';
+import { ConfigType } from '~/util/config';
+import { OpenReviewQueries } from '~/openreview/openreview-queries';
 
 type Args = {
   pdf: string;
   toFile: boolean;
   outputPath?: string;
-  format: OutputFormat;
   overwrite: boolean;
   config: ConfigType;
 }
@@ -38,43 +36,55 @@ export function outputExists(file: string, overwrite: boolean): boolean {
   return fs.existsSync(file);
 }
 
-export async function runExtractReferences({
+function determineOutputFilename({
   pdf,
   toFile,
-  format,
-  outputPath,
-  overwrite,
-  config
-}: Args) {
-  // check grobid is running
-  const isAlive = await grobidIsAlive();
-  if (!isAlive) {
-    putStrLn('Error: Grobid is not running; exiting...');
-    return;
-  }
-
-  // TODO check OpenReview API is available
-
-
+  outputPath
+}: Args): string | undefined {
   let outputFilename: string | undefined;
+  const format = 'json';
   if (toFile) {
     if (outputPath === undefined) {
       // Default to same as input
       outputFilename = `${pdf}.refs.${format}`;
     } else {
       const pdfBase = path.basename(pdf);
-      // const pdfDir = path.dirname(pdf);
       const outputBase = `${pdfBase}.refs.${format}`;
       outputFilename = path.join(outputPath, outputBase)
     }
   }
+  return outputFilename;
+}
 
-  // const outputFilename = toFile ? `${pdf}.refs.${format}` : undefined;
+export async function runExtractReferences(args: Args) {
+  const {
+    pdf,
+    overwrite,
+    config
+  } = args;
+
+  const outputFilename = determineOutputFilename(args);
+
   if (outputFilename && outputExists(outputFilename, overwrite)) {
     putStrLn(`Output file already exists: ${outputFilename}`);
     putStrLn('Skipping. Use --overwrite to force');
     return;
   }
+
+  const isAlive = await grobidIsAlive();
+  if (!isAlive) {
+    putStrLn('Error: Grobid is not running; exiting...');
+    return;
+  }
+
+  const openreviewQueries = new OpenReviewQueries(config);
+  const orLogin = await openreviewQueries.login();
+
+  if (!orLogin) {
+    putStrLn('Error: Could not login to OpenReview; exiting...');
+    return;
+  }
+
 
   const xmlString = await grobidProcessReferences(pdf)
   if (E.isLeft(xmlString)) {
@@ -92,16 +102,11 @@ export async function runExtractReferences({
 
   const refs = refsOrError.right;
 
-  await runOpenReviewQueries(refs, config);
+  await runOpenReviewQueries(refs, openreviewQueries);
 
   const biblioStats = await summarizeReferences(refs);
-  let outputContent = '';
-  if (format === 'json') {
-    const jsonOutput = await createJsonFormatOutput(biblioStats, refs);
-    outputContent = JSON.stringify(jsonOutput);
-  } else {
-    outputContent = outputBiblioSummary(biblioStats, refs);
-  }
+  const jsonOutput = createJsonFormatOutput(biblioStats, refs);
+  const outputContent = JSON.stringify(jsonOutput);
 
   if (outputFilename) {
     fs.writeFileSync(outputFilename, outputContent, {});

@@ -19,6 +19,11 @@ export class OpenReviewQueries {
     this.openExchange = new OpenReviewExchange(config);
   }
 
+  async login(): Promise<boolean> {
+    await this.openExchange.getCredentials();
+    return this.openExchange.credentials !== undefined;
+  }
+
   async queryNotesForTitle(params: Partial<TitleSearchParams>): Promise<any> {
     return this.openExchange.apiGET('/notes/search', { ...params });
   }

@@ -11,10 +11,9 @@ import {
   AxiosError
 } from 'axios';
 
-import { Logger } from 'winston';
 
-import { ConfigType, initConfig } from '~/util/config';
-import { getLogger } from '~/util/basic-logging';
+import { ConfigType } from '~/util/config';
+import { putStrLn } from '~/util/pretty-print';
 
 type ErrorTypes = AxiosError | unknown;
 
@@ -28,15 +27,12 @@ export interface Credentials {
 }
 
 export class OpenReviewExchange {
-
   credentials?: Credentials;
   user: string;
   password: string;
   apiBaseURL: string;
-  log: Logger;
 
   constructor(config: ConfigType) {
-    this.log = getLogger('OpenReviewExchange')
     this.apiBaseURL = config.get('openreview:restApi');
     this.user = config.get('openreview:restUser');
     this.password = config.get('openreview:restPassword');
@@ -69,28 +65,31 @@ export class OpenReviewExchange {
     return axios.create(conf);
   }
 
-  async getCredentials(): Promise<Credentials> {
+  async getCredentials(): Promise<Credentials | undefined> {
     if (this.credentials !== undefined) {
       return this.credentials;
     }
 
-    this.log.debug(`Logging in as ${this.user}`);
+    putStrLn(`Logging in as ${this.user}`);
     if (this.user === undefined || this.password === undefined) {
       return Promise.reject(new Error('Openreview API: user or password not defined'));
     }
-    const creds = await this.postLogin();
+    this.credentials = await this.postLogin();
+    if (this.credentials) {
+      putStrLn(`Successfully logged in to OpenReview as ${this.credentials.user.id}`);
+    }
 
-    this.log.info(`Successfully logged in to OpenReview as ${creds.user.id}`);
-
-    this.credentials = creds;
-    return creds;
+    return this.credentials;
   }
 
-  async postLogin(): Promise<Credentials> {
+  async postLogin(): Promise<Credentials | undefined> {
     return this.configAxios()
       .post('/login', { id: this.user, password: this.password })
       .then(r => r.data)
-      .catch(displayRestError);
+      .catch(err => {
+        displayRestError(err);
+        return undefined;
+      });
   }
 
   async apiGET<R>(url: string, query: Record<string, string | number>, retries = 1): Promise<R | undefined> {
@@ -120,7 +119,7 @@ export class OpenReviewExchange {
       .catch(error => {
         displayRestError(error);
         this.credentials = undefined;
-        this.log.warn(`API Error ${error}: retries=${retries} `);
+        putStrLn(`API Error ${error}: retries=${retries} `);
         return this.apiAttempt(apiCall, retries - 1);
       });
   }

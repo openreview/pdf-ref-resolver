@@ -18,7 +18,6 @@ import { prettyPrint } from '~/util/pretty-print';
  *    + io-ts is a schema and encoder/decoder library
  **/
 
-
 /**
  * Schema definitions
  */

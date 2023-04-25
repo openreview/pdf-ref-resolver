@@ -1,5 +1,3 @@
-import { prettyPrint, putStrLn } from '~/util/pretty-print';
-
 import {
   findElement,
   findElements,
@@ -11,13 +9,16 @@ import {
 import * as E from 'fp-ts/lib/Either';
 
 import { OpenReviewQueries } from '~/openreview/openreview-queries';
-import { warn } from 'console';
-import { ConfigType } from '~/util/config';
+import { levenshteinDistance } from '~/util/leven';
 
 export interface OpenReviewNote {
   id: string;
   title: string;
   authors: string[];
+  authorids: string[];
+
+  // Measure similarity to title found by grobid
+  titleMatchPercent: number;
 }
 
 export interface Person {
@@ -43,9 +44,13 @@ export interface Monograph {
 
 export interface ReferenceContext {
   reference: Reference;
+  refNumber: number;
+  title: string; // the canonical title as given by grobid
+  authors: string[]; // the canonical author list as given by grobid
+  warnings: string[];
+  isValid: boolean; // set to false if extracted data is not valid
   matchingNotes?: OpenReviewNote[];
   source: JSElement;
-  reportText: string[];
 }
 
 // Keep track of a few stats for the full bibliography
@@ -70,9 +75,11 @@ export function getReferenceAuthors(ref: Reference): Person[] | undefined {
   return authors;
 }
 
+/**
+ * performs a simple mapping of xml -> json, but the output is very verbose
+ * and not easy or useful to work with, so we remap the keys/values
+ */
 export function gbdXmlToReferences(grobidXml: string): E.Either<string[], ReferenceContext[]> {
-  // performs a simple mapping of xml -> json, but the output is very verbose
-  // and not easy or useful to work with, so we remap the keys/values
 
   const docOrErr = xmlStringToJSDocument(grobidXml);
   if (E.isLeft(docOrErr)) {
@@ -98,7 +105,6 @@ export function gbdXmlToReferences(grobidXml: string): E.Either<string[], Refere
 }
 
 export function gbdToReference(jsElem: JSElement): ReferenceContext {
-
   const analytic = gbdToAnalytic(jsElem);
   const monograph = gbdToMonograph(jsElem);
 
@@ -109,13 +115,20 @@ export function gbdToReference(jsElem: JSElement): ReferenceContext {
 
   const refContext: ReferenceContext = {
     reference,
-    source: jsElem,
-    reportText: []
+    refNumber: -1,
+    title: '',
+    authors: [],
+    warnings: [],
+    isValid: true,
+    source: jsElem
   }
 
   return refContext;
 }
 
+/**
+ * Convert a Grobid person element
+ */
 export function gbdToPerson(persElem: JSElement): Person | undefined {
   const surname = findElementText(persElem, (n) => n.name === 'surname');
   if (!surname) return;
@@ -126,6 +139,9 @@ export function gbdToPerson(persElem: JSElement): Person | undefined {
   return { first, middle, last: surname }
 }
 
+/**
+ * Convert a Grobid Analytic element
+ */
 export function gbdToAnalytic(jsElem: JSElement): Analytic | undefined {
   const analytic = findElement(jsElem, (n) => n.name === 'analytic');
   if (!analytic) {
@@ -146,6 +162,9 @@ export function gbdToAnalytic(jsElem: JSElement): Analytic | undefined {
   };
 }
 
+/**
+ * Convert a Grobid Monograph element
+ */
 export function gbdToMonograph(jsElem: JSElement): Monograph | undefined {
   const monogr = findElement(jsElem, (n) => n.name === 'monogr');
   if (!monogr) {
@@ -166,112 +185,79 @@ export function gbdToMonograph(jsElem: JSElement): Monograph | undefined {
 }
 
 
-export async function runOpenReviewQueries(refContexts: ReferenceContext[], config: ConfigType) {
-  const orQueries = new OpenReviewQueries(config);
-
+/**
+ * Attempt to find matching papers in openreview
+ */
+export async function runOpenReviewQueries(refContexts: ReferenceContext[], orQueries: OpenReviewQueries) {
   for await (const ctx of refContexts) {
     const ref = ctx.reference;
     const title = getReferenceTitle(ref);
     if (title === undefined || title.length === 0) {
-      putStrLn('No title found in grobid reference');
+      ctx.warnings.push('Error querying Openreview: No title');
       continue;
     }
     const results = await orQueries.queryNotesForTitle({ term: `"${title}"`, source: 'forum', limit: 3 });
     const noteList: any[] = results.notes;
     const notes: OpenReviewNote[] = noteList.map(note => {
       const { id } = note;
-      const { title, authors } = note.content;
+      const { title, authors, authorids } = note.content;
       return <OpenReviewNote>{
-        id, title, authors
+        id, title, authors, authorids
       };
     });
     ctx.matchingNotes = notes;
   }
 }
 
-function putReportLn(refCtx: ReferenceContext, ...msgs: string[]) {
-  const msg = msgs.join('')
-  refCtx.reportText.push(msg);
-}
-
-type OutputOpts = {
-  outputFile?: string;
-}
-
-export async function createJsonFormatOutput(
+export function createJsonFormatOutput(
   biblioStats: BibliographyStats,
   refContexts: ReferenceContext[],
-): Promise<object> {
+): object {
 
-  const leven = (await import('leven')).default;
-
-  function percentDiff(s1: string, s2: string): number {
-    const dist = leven(s1.toLowerCase(), s2.toLowerCase());
-    const ubound = Math.max(s1.length, s2.length);
-    const unchanged = (ubound - dist)
-    const ratio = unchanged / ubound;
-    const perc = Math.round(ratio * 100)
-    return perc;
-  }
   const biblioSummary = {
-    ReferenceCount: biblioStats.referenceCount,
-    WithTitlesCount: biblioStats.withTitles,
-    WithNoteMatchesCount: biblioStats.withMatchingNotes
+    references: biblioStats.referenceCount,
+    withTitles: biblioStats.withTitles,
+    withNoteMatches: biblioStats.withMatchingNotes
   };
 
   const references = refContexts.map((ctx) => {
-    const ref = ctx.reference;
-    const { matchingNotes } = ctx;
+    const { matchingNotes, isValid, warnings } = ctx;
+    if (!isValid) {
+      return {
+        isValid,
+        warnings
+      };
+    }
 
-    const warnings: string[] = [];
+    const { title, authors } = ctx;
+
     const resultRec: any = {
+      title,
+      authors,
+      isValid,
       warnings
     };
 
-    const title = getReferenceTitle(ref);
-    const authors = getReferenceAuthors(ref);
-    if (title) {
-      resultRec.title = title;
 
-      if (!matchingNotes) {
-        warnings.push('OpenReview title matching was not run');
-      } else {
-        const matchPercents: [number, string][] = matchingNotes.map(note => {
-          const diff = percentDiff(note.title, title);
-          const msg = `${note.id} (${diff}% title match)`;
-          return [diff, msg];
+    if (!matchingNotes) {
+      warnings.push('OpenReview title matching was not run');
+    } else {
+      resultRec.openreviewMatches = matchingNotes
+        .filter(note => note.titleMatchPercent >= 95)
+        .map(note => {
+          const matchRec: any = {
+            id: note.id,
+            authors: note.authors,
+            authorids: note.authorids,
+            match: note.titleMatchPercent
+          };
+          if (note.titleMatchPercent < 100) {
+            matchRec.title = note.title;
+          }
+          return matchRec;
         });
-
-        const strongMatches = matchPercents
-          .filter(([n,]) => n > 95)
-          .map(([, diff]) => diff);
-
-        resultRec.openreviewMatches = strongMatches;
-      }
-    } else {
-      warnings.push('No Title Found');
     }
 
-    if (authors && authors.length > 0) {
-      const names = authors.map(author => {
-        let name = '';
-        const { first, middle, last } = author;
-        if (first) {
-          name += `${first}`;
-        }
-        if (middle) {
-          name += ` ${middle}`;
-        }
-        if (last) {
-          name += ` ${last}`;
-        }
-
-        return name.trim();
-      });
-      resultRec.authors = names;
-    } else {
-      warnings.push('No Authors Found')
-    }
     return resultRec;
   });
 
@@ -281,35 +267,9 @@ export async function createJsonFormatOutput(
   };
 }
 
-export function outputBiblioSummary(
-  biblioStats: BibliographyStats,
-  refContexts: ReferenceContext[],
-): string {
-  const biblioSummary = [
-    `Reference Count: ${biblioStats.referenceCount}`,
-    `   with titles      : ${biblioStats.withTitles}`,
-    `   with note matches: ${biblioStats.withMatchingNotes}`,
-  ].join('\n');
-
-  const reportBlocks = refContexts.map((ctx) => {
-    const report = ctx.reportText.join('\n');
-    return report;
-  });
-
-  const reports = [
-    biblioSummary,
-    '',
-    reportBlocks.join('\n'),
-  ].join('\n')
-
-  return reports;
-}
-
 export async function summarizeReferences(refContexts: ReferenceContext[]): Promise<BibliographyStats> {
-  const leven = (await import('leven')).default;
-
   function percentDiff(s1: string, s2: string): number {
-    const dist = leven(s1.toLowerCase(), s2.toLowerCase());
+    const dist = levenshteinDistance(s1.toLowerCase(), s2.toLowerCase());
     const ubound = Math.max(s1.length, s2.length);
     const unchanged = (ubound - dist)
     const ratio = unchanged / ubound;
@@ -326,101 +286,45 @@ export async function summarizeReferences(refContexts: ReferenceContext[]): Prom
 
   refContexts.forEach((ctx, refNum) => {
     const ref = ctx.reference;
+    ctx.refNumber = refNum;
     const titleOrUndef = getReferenceTitle(ref);
-    const authors = getReferenceAuthors(ref);
-    const title = titleOrUndef ? titleOrUndef : 'No title found for reference';
+    if (titleOrUndef) {
+      biblioStats.withTitles += 1;
+      const title = ctx.title = titleOrUndef;
 
-    const refMarker = `[${refNum + 1}]`;
-    const indent = ' '.repeat(refMarker.length + 1);
-    putReportLn(ctx, `${refMarker} ${title}`);
-
-    if (!titleOrUndef) {
-      prettyPrint({ source: ctx.source });
-      return;
-    }
-    biblioStats.withTitles += 1;
-
-    if (!authors) {
-      putReportLn(ctx, 'No authors found for reference. Source was:')
-      prettyPrint({ source: ctx.source });
-      return;
-    }
-    biblioStats.withAuthors += authors.length === 0 ? 0 : 1;
-
-    const authorNameList = authors.map(author => {
-      const nameparts = [
-        author.first,
-        author.middle,
-        author.last
-      ].filter(n => n !== undefined);
-      return nameparts.join(' ');
-    });
-
-    if (authorNameList.length === 0) {
-      putReportLn(ctx, indent, 'No Authors')
-      prettyPrint({ source: ctx.source });
-    } else {
-      const authorNames = authorNameList.join('; ')
-      putReportLn(ctx, indent, authorNames)
-    }
-
-    const { matchingNotes } = ctx;
-
-    putReportLn(ctx, indent, '== Matching OpenReview Notes');
-
-    if (!matchingNotes) {
-      putReportLn(ctx, indent, '<OpenReview note matching was not run>');
-      putReportLn(ctx, '\n');
-      return;
-    }
-
-    if (matchingNotes.length === 0) {
-      putReportLn(ctx, indent, '<No matching OpenReview notes found>');
-      putReportLn(ctx, '\n');
-      return;
-    }
-
-    const matchPercents: [number, string][] = matchingNotes.map(note => {
-      const diff = percentDiff(note.title, title);
-      const msg = `${note.id} (${diff}% title match)`;
-      return [diff, msg];
-    });
-
-    const strongMatches = matchPercents
-      .filter(([n,]) => n > 95)
-      .map(([, diff]) => diff);
-
-    const weakMatches = matchPercents
-      .filter(([n,]) => 75 <= n && n <= 95)
-      .map(([, diff]) => diff);
-
-    const nonMatches = matchPercents
-      .filter(([n,]) => n < 75)
-      .map(([, diff]) => diff);
-
-    if (strongMatches.length > 0) {
-      putReportLn(ctx, indent, '  === Strong Matches');
-      strongMatches.forEach(m => {
-        putReportLn(ctx, indent, indent, m);
-      })
+      const { matchingNotes } = ctx;
+      if (!matchingNotes || matchingNotes.length === 0) {
+        return;
+      }
       biblioStats.withMatchingNotes += 1;
-    }
 
-    if (weakMatches.length > 0) {
-      putReportLn(ctx, indent, '  === Weak Matches');
-      weakMatches.forEach(m => {
-        putReportLn(ctx, indent, indent, m);
+      matchingNotes.forEach(note => {
+        const diff = percentDiff(note.title, title);
+        note.titleMatchPercent = diff;
       });
+    } else {
+      ctx.title = '';
+      ctx.warnings.push('Grobid: no title found');
+      ctx.isValid = false;
     }
 
-    if (nonMatches.length > 0) {
-      putReportLn(ctx, indent, '  === Non Matching Candidates');
-      nonMatches.forEach(m => {
-        putReportLn(ctx, indent, indent, m);
+    const authors = getReferenceAuthors(ref);
+
+    if (authors && authors.length > 0) {
+      biblioStats.withAuthors += authors.length === 0 ? 0 : 1;
+      const authorNameList = authors.map(author => {
+        const nameparts = [
+          author.first,
+          author.middle,
+          author.last
+        ].filter(n => n !== undefined);
+        return nameparts.join(' ');
       });
-    }
 
-    putReportLn(ctx, '\n');
+      ctx.authors.push(...authorNameList);
+    } else {
+      ctx.warnings.push('Grobid: no authors found');
+    }
   });
 
   return biblioStats;

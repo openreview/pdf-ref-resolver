@@ -10,18 +10,20 @@ Extract references from PDF bibliographies and find the corresponding papers in 
     > docker pull lfoppiano/grobid:0.7.2
     > docker run --rm -p 8070:8070 lfoppiano/grobid:0.7.2
 
+Note: The first time Grobid is run after starting the container, it will load up a bunch of model files, which takes
+a long time (~15-20 seconds or more, depending on the machine). The command line app might timeout  on the
+first usage.
+
 ## Build and install node app (installs to system node/node_modules location)
-    > cd ./modules/extraction-broker
     > npm install
     > npm run build
 
-Use sudo if node is installed as root:
+Install with sudo if node is installed as root:
     > npm i -g ./
 
 
 ## (Optional) Install Biblio-Glutton
     > Grobid can use Biblio-Glutton to improve performance if necessary
-
 
 # Running
 ## Help options

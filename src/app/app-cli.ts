@@ -23,21 +23,15 @@ export function registerCommands(args: YArgsT) {
         type: 'string',
         default: undefined
       }),
-      opt.ion('format', {
-        describe: 'Specify JSon or plain text output',
-        type: 'string',
-        choices: ['txt', 'json'],
-        default: 'json'
-      }),
       opt.file('config: Path to config file'),
       opt.flag('overwrite: Overwrite any existing output file', false),
     ),
   )(async (args: any) => {
-    const { pdf, toFile, overwrite, format, outputPath, config } = args;
+    const { pdf, toFile, overwrite, outputPath, config } = args;
 
     const loadedConfig = initConfig(config)
 
-    await runExtractReferences({ pdf, toFile, overwrite, format, outputPath, config: loadedConfig });
+    await runExtractReferences({ pdf, toFile, overwrite, outputPath, config: loadedConfig });
   });
 
 }
