@@ -27,26 +27,36 @@ Install with sudo if node is installed as root:
 
 # Running
 ## Help options
+```
     > pdf-ref-resolver extract-references --help
 
     Extract PDF references using Grobid service, match with OpenReview papers
 
     Options:
-      --version      Show version number                                   [boolean]
-      --help         Show help                                             [boolean]
-      --pdf          Input pdf file                              [string] [required]
-      --to-file      Write output to file; Filename is `input.pdf.refs.(txt|json)`
+      --version               Show version number                          [boolean]
+      --help                  Show help                                    [boolean]
+      --pdf                   Input pdf file                     [string] [required]
+      --to-file               Write output to file; Filename is
+                              `input.pdf.refs.(txt|json)` [boolean] [default: false]
+      --output-path           Specify a directory to write output (if
+                              --to-file=true). Defaults to same as input PDF[string]
+      --config                Path to config file                [string] [required]
+      --overwrite             Overwrite any existing output file
                                                           [boolean] [default: false]
-      --output-path  Specify a directory to write output (if --to-file=true).
-                     Defaults to same as input PDF                          [string]
-      --format       Specify JSon or plain text output
-                                 [string] [choices: "txt", "json"] [default: "json"]
-      --config       Path to config file                         [string] [required]
-      --overwrite    Overwrite any existing output file   [boolean] [default: false]
+      --with-matched          only output references that match an OpenReview note
+                                                          [boolean] [default: false]
+      --with-unmatched        only output references that *do not* match an
+                              OpenReview note             [boolean] [default: false]
+      --with-partial-matched  only output references with match < 100% to an
+                              OpenReview note             [boolean] [default: false]
+      --with-source           include the raw Grobid data in the output (verbose,
+                              for debugging)              [boolean] [default: false]
+```
+
 
 ## Config file Format
 Configuration to specify REST endpoints and login info
-
+```
     {
         "openreview": {
             "restApi": "https://api.openreview.net",
@@ -54,6 +64,7 @@ Configuration to specify REST endpoints and login info
             "restPassword": "my-password"
         },
     }
+```
 
 ## Examples
 ### Write JSON-formatted output file to current directory
