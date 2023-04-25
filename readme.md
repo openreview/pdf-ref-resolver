@@ -112,7 +112,11 @@ Any warning messages.
 
 A  note from  OpenReview  that matched.  Notes are  matched  by first  searching
 OpenReview,  using Grobid-extracted  title  as keywords,  then  filtered with  a
-string similarity function.
+string similarity function. Fields titleMatch/nameMatch are numbers 0-100, 100 being
+a perfect match. Name matching uses a string similarity function that doesn't penalize
+deletions from the longer version of the name to the shorter, to allow matching between
+full and abbreviated names, so, e.g.,  "Marc Peter Deisenroth" -> "M P Deisenroth" is a 100% match.
+
 ```
         {
           "id": "HkNwk_ZObS",
