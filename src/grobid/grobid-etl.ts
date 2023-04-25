@@ -1,3 +1,5 @@
+import _ from 'lodash';
+
 import {
   findElement,
   findElements,
@@ -9,16 +11,23 @@ import {
 import * as E from 'fp-ts/lib/Either';
 
 import { OpenReviewQueries } from '~/openreview/openreview-queries';
-import { levenshteinDistance } from '~/util/leven';
+import { levenshteinDistance, Costs } from '~/util/leven';
+
+export interface OpenReviewAuthor {
+  name: string;
+  id: string;
+  nameMatch: number;
+}
 
 export interface OpenReviewNote {
   id: string;
   title: string;
-  authors: string[];
-  authorids: string[];
+  authors: OpenReviewAuthor[];
+  // authors: string[];
+  // authorids: string[];
 
   // Measure similarity to title found by grobid
-  titleMatchPercent: number;
+  titleMatch: number;
 }
 
 export interface Person {
@@ -184,6 +193,30 @@ export function gbdToMonograph(jsElem: JSElement): Monograph | undefined {
   };
 }
 
+function percentDiff(s1: string, s2: string, costs: Partial<Costs>): number {
+  const dist = levenshteinDistance(s1.toLowerCase(), s2.toLowerCase(), costs);
+  const ubound = Math.max(s1.length, s2.length);
+  const unchanged = (ubound - dist)
+  const ratio = unchanged / ubound;
+  const perc = Math.round(ratio * 100)
+  return perc;
+}
+
+function titleDiff(s1: string, s2: string): number {
+  return percentDiff(s1, s2, {});
+}
+
+// Try to minimize difference between initialized author name and full author
+// name by allowing no-cost insertions into initialized (shorter) version, and
+// ignoring whitespace
+function authorDiff(st1: string, st2: string): number {
+  const s1 = st1.replace(/[  ]+/g, '');
+  const s2 = st2.replace(/[  ]+/g, '');
+  if (s1.length < s2.length) {
+    return percentDiff(s1, s2, { ins: 0 });
+  }
+  return percentDiff(s2, s1, { ins: 0 });
+}
 
 /**
  * Attempt to find matching papers in openreview
@@ -191,18 +224,36 @@ export function gbdToMonograph(jsElem: JSElement): Monograph | undefined {
 export async function runOpenReviewQueries(refContexts: ReferenceContext[], orQueries: OpenReviewQueries) {
   for await (const ctx of refContexts) {
     const ref = ctx.reference;
-    const title = getReferenceTitle(ref);
-    if (title === undefined || title.length === 0) {
+    const grobidTitle = getReferenceTitle(ref);
+    const grobidAuthors = getReferenceAuthors(ref) || [];
+
+    if (grobidTitle === undefined || grobidTitle.length === 0) {
       ctx.warnings.push('Error querying Openreview: No title');
       continue;
     }
-    const results = await orQueries.queryNotesForTitle({ term: `"${title}"`, source: 'forum', limit: 3 });
+
+    const results = await orQueries.queryNotesForTitle({ term: `"${grobidTitle}"`, source: 'forum', limit: 3 });
     const noteList: any[] = results.notes;
     const notes: OpenReviewNote[] = noteList.map(note => {
       const { id } = note;
       const { title, authors, authorids } = note.content;
+      const authorCount = Math.max(authors.length, authorids.length);
+      const authorRecs = _.map(_.range(authorCount), (i: number) => {
+        const name = i < authors.length ? authors[i] : '';
+        const id = i < authorids.length ? authorids[i] : '';
+        const grobidAuthor = i < grobidAuthors.length ? grobidAuthors[i] : undefined;
+        const nameMatch = grobidAuthor ? authorDiff(formatPerson(grobidAuthor), name) : 0;
+        const author: OpenReviewAuthor = {
+          name, id, nameMatch
+        };
+        return author;
+      });
+
       return <OpenReviewNote>{
-        id, title, authors, authorids
+        id,
+        title,
+        authors: authorRecs
+        // authors, authorids
       };
     });
     ctx.matchingNotes = notes;
@@ -243,15 +294,15 @@ export function createJsonFormatOutput(
       warnings.push('OpenReview title matching was not run');
     } else {
       resultRec.openreviewMatches = matchingNotes
-        .filter(note => note.titleMatchPercent >= 95)
+        .filter(note => note.titleMatch >= 95)
         .map(note => {
           const matchRec: any = {
             id: note.id,
             authors: note.authors,
-            authorids: note.authorids,
-            match: note.titleMatchPercent
+            // authorids: note.authorids,
+            titleMatch: note.titleMatch
           };
-          if (note.titleMatchPercent < 100) {
+          if (note.titleMatch < 100) {
             matchRec.title = note.title;
           }
           return matchRec;
@@ -267,15 +318,16 @@ export function createJsonFormatOutput(
   };
 }
 
+function formatPerson(p: Person): string {
+  const nameparts = [
+    p.first,
+    p.middle,
+    p.last
+  ].filter(n => n !== undefined);
+  return nameparts.join(' ');
+}
+
 export async function summarizeReferences(refContexts: ReferenceContext[]): Promise<BibliographyStats> {
-  function percentDiff(s1: string, s2: string): number {
-    const dist = levenshteinDistance(s1.toLowerCase(), s2.toLowerCase());
-    const ubound = Math.max(s1.length, s2.length);
-    const unchanged = (ubound - dist)
-    const ratio = unchanged / ubound;
-    const perc = Math.round(ratio * 100)
-    return perc;
-  }
 
   const biblioStats: BibliographyStats = {
     referenceCount: refContexts.length,
@@ -299,8 +351,8 @@ export async function summarizeReferences(refContexts: ReferenceContext[]): Prom
       biblioStats.withMatchingNotes += 1;
 
       matchingNotes.forEach(note => {
-        const diff = percentDiff(note.title, title);
-        note.titleMatchPercent = diff;
+        const diff = titleDiff(note.title, title);
+        note.titleMatch = diff;
       });
     } else {
       ctx.title = '';
@@ -312,14 +364,7 @@ export async function summarizeReferences(refContexts: ReferenceContext[]): Prom
 
     if (authors && authors.length > 0) {
       biblioStats.withAuthors += authors.length === 0 ? 0 : 1;
-      const authorNameList = authors.map(author => {
-        const nameparts = [
-          author.first,
-          author.middle,
-          author.last
-        ].filter(n => n !== undefined);
-        return nameparts.join(' ');
-      });
+      const authorNameList = authors.map(formatPerson);
 
       ctx.authors.push(...authorNameList);
     } else {

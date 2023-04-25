@@ -35,12 +35,10 @@ describe('Levenshtein string distance', () => {
       ['DJFleet', '~David_J._Fleet1', 1, {ins: 0}],
     ];
 
-    const standardCosts: Costs = { ins: 1, del: 1, sub: 1 };
 
     examples.forEach(example => {
       const [s1, s2, expectedDist, pcosts] = example;
-      const adjustedCosts = _.assign({}, standardCosts, pcosts);
-      const actualDist = levenshteinDistance(s1, s2, adjustedCosts)
+      const actualDist = levenshteinDistance(s1, s2, pcosts)
       expect(actualDist).toEqual(expectedDist);
     })
   });

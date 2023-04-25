@@ -1,3 +1,5 @@
+import _ from 'lodash';
+
 /*
  * Note: This function was written by ChatGPT4 given the following prompt:
  *
@@ -7,7 +9,10 @@
  *
  * Parameters to change costs was added manually.
  */
-export function levenshteinDistance(s1: string, s2: string, costs: Costs = DefaultCosts): number {
+
+export function levenshteinDistance(s1: string, s2: string, pcosts: Partial<Costs> = {}): number {
+  const adjustedCosts = _.assign({}, DefaultCosts, pcosts);
+
   // Create a 2D array with dimensions (s1.length + 1) x (s2.length + 1)
   const matrix: number[][] = new Array(s1.length + 1)
     .fill(null)
@@ -20,7 +25,7 @@ export function levenshteinDistance(s1: string, s2: string, costs: Costs = Defau
   for (let j = 0; j <= s2.length; j++) {
     matrix[0][j] = j;
   }
-  const { ins, del, sub } = costs;
+  const { ins, del, sub } = adjustedCosts;
 
   // Compute the Levenshtein distance using dynamic programming
   for (let i = 1; i <= s1.length; i++) {
@@ -44,7 +49,7 @@ export interface Costs {
   sub: number;
 }
 
-const DefaultCosts: Costs = {
+export const DefaultCosts: Costs = {
   ins: 1,
   del: 1,
   sub: 1
