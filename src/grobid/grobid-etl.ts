@@ -12,6 +12,8 @@ import * as E from 'fp-ts/lib/Either';
 
 import { OpenReviewQueries } from '~/openreview/openreview-queries';
 import { levenshteinDistance, Costs } from '~/util/leven';
+import { ContentFlags } from '~/app/pipeline';
+import { prettyPrint } from '~/util/pretty-print';
 
 export interface OpenReviewAuthor {
   name: string;
@@ -206,16 +208,16 @@ function titleDiff(s1: string, s2: string): number {
   return percentDiff(s1, s2, {});
 }
 
-// Try to minimize difference between initialized author name and full author
-// name by allowing no-cost insertions into initialized (shorter) version, and
+// Try to minimize difference between abbreviated author name (e.g., A. M. Smith)
+// and full author name by allowing no-cost deletions from longer name to shorter version,
 // ignoring whitespace
 function authorDiff(st1: string, st2: string): number {
   const s1 = st1.replace(/[  ]+/g, '');
   const s2 = st2.replace(/[  ]+/g, '');
-  if (s1.length < s2.length) {
-    return percentDiff(s1, s2, { ins: 0 });
+  if (s1.length > s2.length) {
+    return percentDiff(s1, s2, { del: 0 });
   }
-  return percentDiff(s2, s1, { ins: 0 });
+  return percentDiff(s2, s1, { del: 0 });
 }
 
 /**
@@ -253,16 +255,40 @@ export async function runOpenReviewQueries(refContexts: ReferenceContext[], orQu
         id,
         title,
         authors: authorRecs
-        // authors, authorids
       };
     });
     ctx.matchingNotes = notes;
   }
 }
 
+function includeAll(flags: ContentFlags): boolean {
+  const { withMatched, withPartialMatched, withUnmatched } = flags;
+  const bools = [withMatched, withPartialMatched, withUnmatched];
+  const allTrue = _.every(bools);
+  const allFalse = !_.some(bools);
+  // prettyPrint({ flags, allTrue, allFalse })
+  return allTrue || allFalse;
+}
+
+function includeMatched(flags: ContentFlags): boolean {
+  const { withMatched } = flags;
+  return includeAll(flags) || withMatched;
+}
+
+function includePartialMatched(flags: ContentFlags): boolean {
+  const { withPartialMatched } = flags;
+  return includeAll(flags) || withPartialMatched;
+}
+
+function includeUnmatched(flags: ContentFlags): boolean {
+  const { withUnmatched } = flags;
+  return includeAll(flags) || withUnmatched;
+}
+
 export function createJsonFormatOutput(
   biblioStats: BibliographyStats,
   refContexts: ReferenceContext[],
+  flags: ContentFlags
 ): object {
 
   const biblioSummary = {
@@ -273,16 +299,19 @@ export function createJsonFormatOutput(
 
   const references = refContexts.map((ctx) => {
     const { matchingNotes, isValid, warnings } = ctx;
-    if (!isValid) {
+    if (!isValid && includeUnmatched(flags)) {
       return {
         isValid,
         warnings
       };
     }
 
-    const { title, authors } = ctx;
+    const { title, authors, refNumber } = ctx;
+
+    let isPartialMatch = false;
 
     const resultRec: any = {
+      refNumber,
       title,
       authors,
       isValid,
@@ -296,10 +325,17 @@ export function createJsonFormatOutput(
       resultRec.openreviewMatches = matchingNotes
         .filter(note => note.titleMatch >= 95)
         .map(note => {
+          const partialTitleMatch = note.titleMatch < 100;
+          isPartialMatch ||= partialTitleMatch;
+
+          const partialNameMatch = _.some(note.authors, a => {
+            return a.nameMatch < 100;
+          });
+          isPartialMatch ||= partialNameMatch;
+
           const matchRec: any = {
             id: note.id,
             authors: note.authors,
-            // authorids: note.authorids,
             titleMatch: note.titleMatch
           };
           if (note.titleMatch < 100) {
@@ -309,12 +345,27 @@ export function createJsonFormatOutput(
         });
     }
 
-    return resultRec;
+    const haveMatches = resultRec.openreviewMatches.length > 0;
+    let finalResult: any = includeAll(flags) ? resultRec : undefined;
+
+    if (haveMatches && includeMatched(flags)) {
+      finalResult = resultRec;
+    }
+    if (isPartialMatch && includePartialMatched(flags)) {
+      finalResult = resultRec;
+    }
+    if (!haveMatches && includeUnmatched(flags)) {
+      finalResult = resultRec;
+    }
+
+    return finalResult;
   });
+
+  const filtered = _.filter(references, r => r !== undefined);
 
   return {
     summary: biblioSummary,
-    references
+    references: filtered
   };
 }
 
@@ -328,7 +379,6 @@ function formatPerson(p: Person): string {
 }
 
 export async function summarizeReferences(refContexts: ReferenceContext[]): Promise<BibliographyStats> {
-
   const biblioStats: BibliographyStats = {
     referenceCount: refContexts.length,
     withTitles: 0,

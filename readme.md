@@ -65,8 +65,5 @@ Configuration to specify REST endpoints and login info
 ### Write text-formatted output to stdout
     > pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --format txt
 
-
-
 # TODO
 - Search openreview using alternate rest api (in addition to current api)
-- remove xx% match from output

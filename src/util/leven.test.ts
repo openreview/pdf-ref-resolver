@@ -1,5 +1,6 @@
 import { levenshteinDistance, Costs } from './leven';
 import _ from 'lodash';
+import { prettyPrint } from './pretty-print';
 
 describe('Levenshtein string distance', () => {
   it('should work with default costs', () => {
@@ -33,12 +34,14 @@ describe('Levenshtein string distance', () => {
       ['foo-blah', 'foo', 0, { del: 0 }],
       ['D J Fleet', 'David J. Fleet', 0, {ins: 0}],
       ['DJFleet', '~David_J._Fleet1', 1, {ins: 0}],
+      ['C E Rasmussen', 'Matthias W. Seeger', 15, { del: 0 }]
     ];
 
 
     examples.forEach(example => {
       const [s1, s2, expectedDist, pcosts] = example;
       const actualDist = levenshteinDistance(s1, s2, pcosts)
+      // prettyPrint({ s1, s2, actualDist })
       expect(actualDist).toEqual(expectedDist);
     })
   });

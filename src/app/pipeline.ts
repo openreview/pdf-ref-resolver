@@ -21,7 +21,14 @@ import {
 import { ConfigType } from '~/util/config';
 import { OpenReviewQueries } from '~/openreview/openreview-queries';
 
-type Args = {
+export type ContentFlags = {
+  withMatched: boolean;
+  withUnmatched: boolean;
+  withPartialMatched: boolean;
+  withSource: boolean;
+};
+
+type Args = ContentFlags & {
   pdf: string;
   toFile: boolean;
   outputPath?: string;
@@ -105,7 +112,7 @@ export async function runExtractReferences(args: Args) {
   await runOpenReviewQueries(refs, openreviewQueries);
 
   const biblioStats = await summarizeReferences(refs);
-  const jsonOutput = createJsonFormatOutput(biblioStats, refs);
+  const jsonOutput = createJsonFormatOutput(biblioStats, refs, args);
   const outputContent = JSON.stringify(jsonOutput);
 
   if (outputFilename) {

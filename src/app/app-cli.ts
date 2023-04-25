@@ -15,7 +15,6 @@ export function registerCommands(args: YArgsT) {
     'extract-references',
     'Extract PDF references using Grobid service, match with OpenReview papers',
     config(
-      // opt.env,
       opt.file('pdf: Input pdf file'),
       opt.flag('to-file: Write output to file; Filename is `input.pdf.refs.(txt|json)`', false),
       opt.ion('output-path', {
@@ -25,13 +24,20 @@ export function registerCommands(args: YArgsT) {
       }),
       opt.file('config: Path to config file'),
       opt.flag('overwrite: Overwrite any existing output file', false),
+      opt.flag('with-matched: only output references that match an OpenReview note', false),
+      opt.flag('with-unmatched: only output references that *do not* match an OpenReview note', false),
+      opt.flag('with-partial-matched: only output references with match < 100% to an OpenReview note', false),
+      opt.flag('with-source: include the raw Grobid data in the output (verbose, for debugging)', false),
     ),
   )(async (args: any) => {
-    const { pdf, toFile, overwrite, outputPath, config } = args;
+    const { config } = args;
 
     const loadedConfig = initConfig(config)
 
-    await runExtractReferences({ pdf, toFile, overwrite, outputPath, config: loadedConfig });
+    await runExtractReferences({
+      ...args,
+      config: loadedConfig,
+    });
   });
 
 }

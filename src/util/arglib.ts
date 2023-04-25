@@ -222,6 +222,7 @@ export async function runRegisteredCmds(useYargs: Argv): Promise<void> {
   const res = useYargs
     .scriptName(script)
     .strictCommands()
+    .strictOptions()
     .demandCommand(1, 'You need at least one command before moving on')
     .help()
     .fail((msg: string, err: Error, yargInst) => {
