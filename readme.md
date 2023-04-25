@@ -23,7 +23,7 @@ Install with sudo if node is installed as root:
 
 
 ## (Optional) Install Biblio-Glutton
-    > Grobid can use Biblio-Glutton to improve performance if necessary
+Grobid can use Biblio-Glutton to improve performance if necessary.
 
 # Running
 ## Help options
@@ -37,7 +37,7 @@ Install with sudo if node is installed as root:
       --help                  Show help                                    [boolean]
       --pdf                   Input pdf file                     [string] [required]
       --to-file               Write output to file; Filename is
-                              `input.pdf.refs.(txt|json)` [boolean] [default: false]
+                              `input.pdf.refs.json` [boolean] [default: false]
       --output-path           Specify a directory to write output (if
                               --to-file=true). Defaults to same as input PDF[string]
       --config                Path to config file                [string] [required]
@@ -55,7 +55,7 @@ Install with sudo if node is installed as root:
 
 
 ## Config file Format
-Configuration to specify REST endpoints and login info
+Configuration to specify REST endpoints and credentials
 ```
     {
         "openreview": {
@@ -68,13 +68,70 @@ Configuration to specify REST endpoints and login info
 
 ## Examples
 ### Write JSON-formatted output file to current directory
-    > pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --format json --to-file --output-path .
+    > pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --to-file --output-path .
 
 ### Write JSON-formatted output to same directory as input pdf
-    > pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --format json --to-file
-
-### Write text-formatted output to stdout
-    > pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --format txt
+    > pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --to-file
 
 # TODO
 - Search openreview using alternate rest api (in addition to current api)
+
+## Sample Output
+Summary
+```
+{
+  "summary": {
+    "references": 25,
+    "withTitles": 25,
+    "withNoteMatches": 13
+  },
+  "references": [
+```
+
+Reference Entry:
+```
+    {
+      "refNumber": 5,
+```
+
+Title / Author fields as extracted by Grobid
+```
+      "title": "Expectation Propagation in Gaussian process dynamical systems",
+      "authors": [
+        "M P Deisenroth",
+        "S Mohamed"
+      ],
+      "isValid": true,
+```
+
+Any warning messages.
+```
+      "warnings": [],
+      "openreviewMatches": [
+```
+
+A  note from  OpenReview  that matched.  Notes are  matched  by first  searching
+OpenReview,  using Grobid-extracted  title  as keywords,  then  filtered with  a
+string similarity function.
+```
+        {
+          "id": "HkNwk_ZObS",
+          "authors": [
+            {
+              "name": "Marc Peter Deisenroth",
+              "id": "~Marc_Deisenroth1",
+              "nameMatch": 100
+            },
+            {
+              "name": "Shakir Mohamed",
+              "id": "~Shakir_Mohamed1",
+              "nameMatch": 100
+            }
+          ],
+          "titleMatch": 100
+        }
+      ]
+    },
+
+]
+```
