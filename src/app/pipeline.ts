@@ -30,7 +30,6 @@ export type ContentFlags = {
 
 type Args = ContentFlags & {
   pdf: string;
-  toFile: boolean;
   outputPath?: string;
   overwrite: boolean;
   config: ConfigType;
@@ -45,22 +44,17 @@ export function outputExists(file: string, overwrite: boolean): boolean {
 
 function determineOutputFilename({
   pdf,
-  toFile,
   outputPath
-}: Args): string | undefined {
-  let outputFilename: string | undefined;
-  const format = 'json';
-  if (toFile) {
-    if (outputPath === undefined) {
-      // Default to same as input
-      outputFilename = `${pdf}.refs.${format}`;
-    } else {
-      const pdfBase = path.basename(pdf);
-      const outputBase = `${pdfBase}.refs.${format}`;
-      outputFilename = path.join(outputPath, outputBase)
-    }
+}: Args): string {
+  const pdfBase = path.basename(pdf);
+  const pdfDir = path.dirname(pdf);
+  const outputFilename = `${pdfBase}.refs.json`;
+  if (outputPath === undefined) {
+    // Default to same as input
+    return path.join(pdfDir, outputFilename);
   }
-  return outputFilename;
+
+  return path.join(outputPath, outputFilename);
 }
 
 export async function runExtractReferences(args: Args) {

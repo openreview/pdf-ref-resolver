@@ -31,15 +31,18 @@ export class OpenReviewExchange {
   user: string;
   password: string;
   apiBaseURL: string;
+  api2BaseURL: string;
 
   constructor(config: ConfigType) {
     this.apiBaseURL = config.get('openreview:restApi');
+    this.api2BaseURL = config.get('openreview:restApi2');
     this.user = config.get('openreview:restUser');
     this.password = config.get('openreview:restPassword');
   }
 
 
-  configRequest(): AxiosRequestConfig {
+  configRequest(baseUrl?: string): AxiosRequestConfig {
+    const apiEndpoint = baseUrl || this.apiBaseURL;
     let auth = {};
     if (this.credentials) {
       auth = {
@@ -48,7 +51,7 @@ export class OpenReviewExchange {
     }
 
     const reqconfig: AxiosRequestConfig = {
-      baseURL: this.apiBaseURL,
+      baseURL: apiEndpoint,
       headers: {
         'User-Agent': 'open-extraction-service',
         ...auth
@@ -60,8 +63,8 @@ export class OpenReviewExchange {
     return reqconfig;
   }
 
-  configAxios(): AxiosInstance {
-    const conf = this.configRequest();
+  configAxios(baseUrl?: string): AxiosInstance {
+    const conf = this.configRequest(baseUrl);
     return axios.create(conf);
   }
 
@@ -95,6 +98,15 @@ export class OpenReviewExchange {
   async apiGET<R>(url: string, query: Record<string, string | number>, retries = 1): Promise<R | undefined> {
     const run = () =>
       this.configAxios()
+        .get(url, { params: query })
+        .then(response => response.data);
+
+    return this.apiAttempt(run, retries);
+  }
+
+  async api2GET<R>(url: string, query: Record<string, string | number>, retries = 1): Promise<R | undefined> {
+    const run = () =>
+      this.configAxios(this.api2BaseURL)
         .get(url, { params: query })
         .then(response => response.data);
 

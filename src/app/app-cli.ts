@@ -16,9 +16,8 @@ export function registerCommands(args: YArgsT) {
     'Extract PDF references using Grobid service, match with OpenReview papers',
     config(
       opt.file('pdf: Input pdf file'),
-      opt.flag('to-file: Write output to file; Filename is `input.pdf.refs.(txt|json)`', false),
       opt.ion('output-path', {
-        describe: 'Specify a directory to write output (if --to-file=true). Defaults to same as input PDF',
+        describe: 'Specify a directory to write output. Defaults to same as input PDF',
         type: 'string',
         default: undefined
       }),

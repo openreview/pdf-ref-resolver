@@ -42,8 +42,6 @@ Options:
   --version               Show version number                          [boolean]
   --help                  Show help                                    [boolean]
   --pdf                   Input pdf file                     [string] [required]
-  --to-file               Write output to file; Filename is
-                          `input.pdf.refs.json` [boolean] [default: false]
   --output-path           Specify a directory to write output (if
                           --to-file=true). Defaults to same as input PDF[string]
   --config                Path to config file                [string] [required]
@@ -66,6 +64,7 @@ Configuration to specify REST endpoints and credentials
 {
     "openreview": {
         "restApi": "https://api.openreview.net",
+        "restApi2": "https://api2.openreview.net",
         "restUser": "my-username",
         "restPassword": "my-password"
     },
@@ -82,9 +81,6 @@ Configuration to specify REST endpoints and credentials
 ```
 > pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --to-file
 ```
-
-# TODO
-- Search openreview using alternate rest api (in addition to current api)
 
 ## Annotated Sample Output
 Summary header block, with number of Grobid extracted references, and counts of those with
@@ -144,7 +140,8 @@ Deisenroth" is a 100% match.
               "nameMatch": 100
             }
           ],
-          "titleMatch": 100
+          "titleMatch": 100,
+          "apiSource": "api.openreview.net"
         }
       ]
     },

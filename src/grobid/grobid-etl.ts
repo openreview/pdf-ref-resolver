@@ -14,6 +14,7 @@ import { OpenReviewQueries } from '~/openreview/openreview-queries';
 import { levenshteinDistance, Costs } from '~/util/leven';
 import { ContentFlags } from '~/app/pipeline';
 import { prettyPrint } from '~/util/pretty-print';
+import { Note } from '~/openreview/openreview-api1';
 
 export interface OpenReviewAuthor {
   name: string;
@@ -25,9 +26,8 @@ export interface OpenReviewNote {
   id: string;
   title: string;
   authors: OpenReviewAuthor[];
-  // authors: string[];
-  // authorids: string[];
-
+  // api.openreview.net or api2...
+  apiSource: string;
   // Measure similarity to title found by grobid
   titleMatch: number;
 }
@@ -234,10 +234,10 @@ export async function runOpenReviewQueries(refContexts: ReferenceContext[], orQu
       continue;
     }
 
-    const results = await orQueries.queryNotesForTitle({ term: `"${grobidTitle}"`, source: 'forum', limit: 3 });
-    const noteList: any[] = results.notes;
+    const noteList: Note[] = await orQueries.queryNotesForTitle({ term: `"${grobidTitle}"`, source: 'forum', limit: 3 });
+
     const notes: OpenReviewNote[] = noteList.map(note => {
-      const { id } = note;
+      const { id, apiSource } = note;
       const { title, authors, authorids } = note.content;
       const authorCount = Math.max(authors.length, authorids.length);
       const authorRecs = _.map(_.range(authorCount), (i: number) => {
@@ -254,7 +254,8 @@ export async function runOpenReviewQueries(refContexts: ReferenceContext[], orQu
       return <OpenReviewNote>{
         id,
         title,
-        authors: authorRecs
+        authors: authorRecs,
+        apiSource
       };
     });
     ctx.matchingNotes = notes;
@@ -336,7 +337,8 @@ export function createJsonFormatOutput(
           const matchRec: any = {
             id: note.id,
             authors: note.authors,
-            titleMatch: note.titleMatch
+            titleMatch: note.titleMatch,
+            apiSource: note.apiSource,
           };
           if (note.titleMatch < 100) {
             matchRec.title = note.title;
