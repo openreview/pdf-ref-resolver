@@ -1,7 +1,7 @@
 {
   "name": "extraction-broker",
   "private": false,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "license": "ISC",
   "main": "dist/main.js",
   "bin": {
