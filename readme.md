@@ -42,8 +42,8 @@ Options:
   --version               Show version number                          [boolean]
   --help                  Show help                                    [boolean]
   --pdf                   Input pdf file                     [string] [required]
-  --output-path           Specify a directory to write output (if
-                          --to-file=true). Defaults to same as input PDF[string]
+  --output-path           Specify a directory to write output.  Defaults to same
+                          as input PDF                       [string]
   --config                Path to config file                [string] [required]
   --overwrite             Overwrite any existing output file
                                                       [boolean] [default: false]
@@ -74,12 +74,12 @@ Configuration to specify REST endpoints and credentials
 ## Examples
 ### Write JSON-formatted output file to current directory
 ```
-> pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --to-file --output-path .
+> pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --output-path .
 ```
 
 ### Write JSON-formatted output to same directory as input pdf
 ```
-> pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json --to-file
+> pdf-ref-resolver extract-references --pdf ./path/to/input.pdf --config ~/my-config.json
 ```
 
 ## Annotated Sample Output
