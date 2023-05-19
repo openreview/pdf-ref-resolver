@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+env="py-venv"
+python -m venv "$env"
+echo "source $env/bin/activate" >> .envrc
+direnv allow .
